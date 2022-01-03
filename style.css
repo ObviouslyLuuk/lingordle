@@ -1,0 +1,238 @@
+/* Luuk: */
+
+/* BUTTONS */
+
+#keyboard {
+    display: grid;
+    justify-items: center;
+}
+
+.keyboard_row {
+    display: grid;
+}
+
+.keyboard_btn {
+    grid-row: 1;
+    color: white;
+    padding: 20px;
+    background-color: gray;
+    border-radius: 5px;
+    margin: 5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+}
+
+#game_screen {
+    display: grid;
+    grid-template-columns: 20% 80%;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    justify-items: center;    
+}
+
+.game_screen_division {
+    display: grid;
+    justify-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+#board {
+    display: grid;
+    grid-gap: 5px;
+    padding: 20px;
+}
+
+.board_row {
+    display: grid;
+    grid-gap: 5px;
+}
+
+.board_cell {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    line-height: 2rem;
+    font-weight: bold;
+    vertical-align: middle;
+    box-sizing: border-box;
+    color: white;
+    text-transform: uppercase;
+    user-select: none;
+    border: 2px solid gray;
+}
+
+#word_list {
+    color: white;
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+}
+
+#message {
+    color: black;
+    position: absolute;
+    align-self: center;
+    background-color: #ffffffee;
+    padding: 20px;
+    border-radius: 5px;
+    display: none;
+    font-weight: bold;
+}
+
+
+
+
+
+input {
+    color: white;
+    background-color: #202124;
+    border: solid hsl(225, 6%, 20%) 2px;
+    border-radius: 5px;
+  }
+  
+  .btn {
+    color: white;
+    background-color: #202124;
+    border: solid hsl(225, 6%, 20%) 2px !important;
+  }
+  
+  .btn:hover {
+    background-color: hsl(225, 6%, 25%);
+    border: solid hsl(225, 6%, 50%) 2px;
+    color: white;
+  }
+  
+  .btn-primary {
+    background-color: rgb(0, 115, 255);
+    border: solid transparent 2px !important;
+  }
+  
+  .btn-primary:hover {
+    background-color: hsl(213, 100%, 70%);
+    border: solid transparent 2px !important;
+  }
+  
+  #close_info_btn {
+    position: absolute;
+    right: 5px;
+    top: 2px;
+    z-index: 1;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* INFO PAGE */
+  .settings_expl {
+    font-size: 12px;
+    color: darkgrey;
+  }
+  h4 {
+    display: inline-block;
+  }
+  #settings_div h4 {
+    border-bottom: solid rgb(0, 115, 255);
+  }
+  summary {
+    border-bottom: solid rgb(0, 115, 255);
+    outline: transparent;
+  }
+  .settings_div {
+    display:grid;
+    grid-template-columns:repeat(2,50%);
+  }
+  #info_div input {
+    width:60px;
+  }
+  
+  pre {
+    color: white;
+    /* font: inherit; */
+    border: solid grey 1px;
+    /* https://stackoverflow.com/questions/248011/how-do-i-wrap-text-in-a-pre-tag */
+    white-space: pre-wrap;       /* Since CSS 2.1 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */  
+  }
+  pre i {
+    color: grey;
+  }
+  
+  
+  
+  /* Frank Poth 02/28/2018 */
+  
+  * { box-sizing:border-box; margin:0; padding:0; }
+  
+  html { height:100%; width:100%; }
+  
+  body {
+  
+    align-content:center;
+    align-items:space-around;
+    /* background-color:#202830; */
+    background-color:#202124;
+    display:grid;
+    justify-items:center;
+    height:100%;
+    width:100%;
+  
+  }
+  
+  /* 04/07/2018 */
+  
+  canvas { image-rendering:pixelated; }
+  
+  #menu {
+  
+    background-color:rgba(0, 0, 0, 0.5);
+    color:#ffffff;
+    cursor:pointer;
+    display:grid;
+    max-height:100%;
+    overflow-y:auto;
+    padding:8px;
+    position:fixed;
+    right:0px;
+    top:0px;
+    user-select:none;
+  
+    -webkit-tap-highlight-color:transparent;
+  
+  }
+  
+  #menu p {
+  
+    color:#ffffff;
+    font-size:2.0em;
+  
+  }
+  
+  #menu-list {
+  
+    display:none;
+  
+  }
+  
+  #menu-list a {
+  
+    color:#ffffff;
+    font-size:1.5em;
+    text-decoration:none;
+  
+  }
+  
