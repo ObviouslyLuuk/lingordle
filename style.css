@@ -5,19 +5,22 @@
 #keyboard {
     display: grid;
     justify-items: center;
+    width: 100%;
 }
 
 .keyboard_row {
     display: grid;
+    width: 100%;
 }
 
 .keyboard_btn {
     grid-row: 1;
     color: white;
-    padding: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
     background-color: gray;
     border-radius: 5px;
-    margin: 5px;
+    margin: 2px;
     text-transform: uppercase;
     cursor: pointer;
     text-align: center;
@@ -45,7 +48,6 @@
 #board {
     display: grid;
     grid-gap: 5px;
-    padding: 20px;
 }
 
 .board_row {
@@ -75,6 +77,7 @@
     width: 100%;
     height: 100%;
     padding: 10px;
+    display: none;
 }
 
 #message {
