@@ -111,9 +111,12 @@ function init_keyboard(parent) {
         "enter,z,x,c,v,b,n,m,backspace"]
     let keyboard = create_and_append('div', parent, id="keyboard")
     
-    for (keys of rows) {
+    for (let i in rows) {
+        let keys = rows[i]
         let row = create_and_append('div', keyboard, null, class_="keyboard_row")
-        for (key of keys.split(",")) {
+        if (i == 1)
+            row.style.width = "90%"
+        for (let key of keys.split(",")) {
             let btn = create_and_append('div', row, `${key}-key`, "keyboard_btn")
             btn.innerHTML = key
             btn.setAttribute('onclick', `window.key_down('${btn.innerHTML}')`)
