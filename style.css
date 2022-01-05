@@ -1,6 +1,9 @@
 /* Luuk: */
 
 /* BUTTONS */
+* {
+    color: white;
+}
 
 #keyboard {
     display: grid;
@@ -41,6 +44,7 @@
 .game_screen_division {
     display: grid;
     justify-items: center;
+    align-content: center;
     width: 100%;
     overflow: hidden;
 }
@@ -84,6 +88,11 @@
     overflow: auto;
     width: 100%;
     height: 100%;
+}
+
+.distr_cell {
+    display: grid;
+    justify-content: center;
 }
 
 #message {

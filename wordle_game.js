@@ -139,11 +139,11 @@ function init_settings(parent) {
     return word_list_div
 }
 
-function fill_word_list(p_words) {
-    document.getElementById('options_stat').innerHTML = `OPTIONS: ${p_words.length}`
+function fill_word_list(p_words_entries) {
+    document.getElementById('options_stat').innerHTML = `OPTIONS: ${p_words_entries.length}`
     table = document.getElementById('word_list_table')
     empty_element(table)
-    for (let [word, prob] of p_words) {
+    for (let [word, prob] of p_words_entries) {
         let row = create_and_append('tr', table)
         let cell = create_and_append('td', row)
         cell.innerHTML = word
@@ -261,6 +261,7 @@ function attempt_word() {
     p_words_entries = Object.entries(possible_words)
     console.log(`options: ${p_words_entries.length}`)
     fill_word_list(p_words_entries)
+    fill_letter_distribution(p_words_entries)
 
     if (!result.includes("present") && !result.includes("absent"))
         win_fn()
@@ -287,6 +288,11 @@ function sum_array(array) {
     for (let element of array)
         sum += element
     return sum
+}
+
+function order_dict(p_words) {
+    // Order by value
+    return Object.fromEntries(Object.entries(p_words).sort(([,a],[,b]) => b-a))
 }
 
 function normalize_dict(p_words) {
@@ -351,20 +357,42 @@ function multinomial_sample(array, probs) {
 }
 
 
-function get_letter_distribution(p_words) {
+function get_letter_distribution(p_words_entries, word_prob_weight=.7) {
     let p_letters = []
-    for (let pos in WORD_LEN) {
+    let arbitrary_word = p_words_entries[0][0]
+    for (let pos in arbitrary_word) {
         let p_letters_pos = {}
         for (let c of alphabet) {
             p_letters_pos[c] = 0
         }
 
-        for (let [word, prob] of p_words.entries()) {
-            p_letters_pos[word[pos]] += prob
+        for (let [word, prob] of p_words_entries) {
+            if (!alphabet.includes(word[pos]))
+                continue
+            p_letters_pos[word[pos]] += (1-word_prob_weight) + word_prob_weight*prob
         }
-        p_letters.push(normalize_dict(p_letters_pos))
+        p_letters.push(normalize_dict(order_dict(p_letters_pos)))
     }
     return p_letters
+}
+
+function fill_letter_distribution(p_words_entries) {
+    let p_letters = get_letter_distribution(p_words_entries)
+    let div = document.getElementById('game_screen_right')
+    empty_element(div)
+    let grid = create_and_append('div', div)
+    grid.style.display = 'grid'
+    grid.style['grid-template-columns'] = 'auto '.repeat(p_letters.length)
+    for (let i in alphabet) {
+        for (let pos in p_letters) {
+            let letter = Object.keys(p_letters[pos])[i]
+            let cell = create_and_append('div', grid, null, "distr_cell")
+            cell.innerHTML = letter
+            let prob = p_letters[pos][letter]
+            let color = `rgba(83, 141, 78,${prob})`
+            cell.style['background-color'] = color
+        }
+    }
 }
 
 let { screen_left, screen_mid, screen_right } = init_game_screen()
@@ -375,4 +403,6 @@ window.addEventListener("keydown", (event) => {window.key_down(keydict[event.key
 
 screen_left.style['height'] = `${screen_mid.offsetHeight}px`
 
-fill_word_list(Object.entries(possible_words))
+let p_words_entries = Object.entries(possible_words)
+fill_word_list(p_words_entries)
+fill_letter_distribution(p_words_entries)
