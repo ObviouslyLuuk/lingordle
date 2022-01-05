@@ -51,19 +51,32 @@ function set_visibility(element_id, vis) {
         element.style['display'] = 'none'
 }
 
+function add_credit_button(parent) {
+    let credit = create_and_append('a', parent, null, 'btn')
+    credit.innerHTML = "ORIGINAL WORDLE"
+    credit.href = 'https://www.powerlanguage.co.uk/wordle/'
+    credit.target="_blank"
+    credit.rel="noopener noreferrer"
+    credit.style.margin = '5px'
+}
+
 function init_game_screen() {
     let game_screen = create_and_append('div', null, "game_screen")
     let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
+    let screen_mid = create_and_append('div', game_screen, "game_screen_mid", "game_screen_division")
     let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
-    create_and_append('div', screen_right, "message")
+    create_and_append('div', screen_mid, "message")
 
     if (document.body.offsetHeight > document.body.offsetWidth) {
         screen_left.style.display = "none"
+        screen_right.style.display = "none"
         game_screen.style['grid-template-columns'] = "auto"
-        screen_right.style.width = `${document.body.offsetWidth}px`
+        screen_mid.style.width = `${document.body.offsetWidth}px`
     }
 
-    return { screen_left, screen_right }
+    add_credit_button(screen_mid)
+
+    return { screen_left, screen_mid, screen_right }
 }
 
 function init_grid(parent, word_len, attempts) {
@@ -116,15 +129,17 @@ function init_settings(parent) {
     cheats_checkbox.setAttribute('onclick', 'set_visibility("word_list", this.checked)')
 
     let word_list_div = create_and_append('div', parent, "word_list")
+    create_and_append('div', word_list_div, "options_stat")
+    let word_list_table_div = create_and_append('div', word_list_div, "word_list_table_div")
+    create_and_append('table', word_list_table_div, 'word_list_table')
+    word_list_table_div.setAttribute('data-simplebar', "init")
     return word_list_div
 }
 
 function fill_word_list(p_words) {
-    word_list_div = document.getElementById('word_list')
-    empty_element(word_list_div)
-    let options_stat = create_and_append('div', word_list_div)
-    options_stat.innerHTML = `options: ${p_words.length}`
-    let table = create_and_append('table', word_list_div)
+    document.getElementById('options_stat').innerHTML = `OPTIONS: ${p_words.length}`
+    table = document.getElementById('word_list_table')
+    empty_element(table)
     for (let [word, prob] of p_words) {
         let row = create_and_append('tr', table)
         let cell = create_and_append('td', row)
@@ -132,7 +147,6 @@ function fill_word_list(p_words) {
         let cell2 = create_and_append('td', row)
         cell2.innerHTML = `${(prob*100).toFixed(4)}%`
     }
-    // word_list_div.setAttribute('data-simplebar', "init")
 }
 
 function enter_letter(letter) {
@@ -333,12 +347,29 @@ function multinomial_sample(array, probs) {
     }
 }
 
-let { screen_left, screen_right } = init_game_screen()
+
+function get_letter_distribution(p_words) {
+    let p_letters = []
+    for (let pos in WORD_LEN) {
+        let p_letters_pos = {}
+        for (let c of alphabet) {
+            p_letters_pos[c] = 0
+        }
+
+        for (let [word, prob] of p_words.entries()) {
+            p_letters_pos[word[pos]] += prob
+        }
+        p_letters.push(normalize_dict(p_letters_pos))
+    }
+    return p_letters
+}
+
+let { screen_left, screen_mid, screen_right } = init_game_screen()
 let word_list_div = init_settings(screen_left)
-init_grid(screen_right, WORD_LEN, ATTEMPTS)
-init_keyboard(screen_right)
+init_grid(screen_mid, WORD_LEN, ATTEMPTS)
+init_keyboard(screen_mid)
 window.addEventListener("keydown", (event) => {window.key_down(keydict[event.keyCode])})
 
-screen_left.style['height'] = `${screen_right.offsetHeight}px`
+screen_left.style['height'] = `${screen_mid.offsetHeight}px`
 
 fill_word_list(Object.entries(possible_words))
