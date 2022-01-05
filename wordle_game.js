@@ -10,8 +10,6 @@ var filtered_p_words = filter_p_words(WORD_LEN, P_WORDS)
 var mystery_word = multinomial_sample(Object.keys(filtered_p_words), Object.values(filtered_p_words))
 var possible_words = filtered_p_words
 
-console.log(mystery_word)
-
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
 var keydict = {
     13: "enter",
@@ -111,9 +109,12 @@ function init_keyboard(parent) {
 }
 
 function init_settings(parent) {
-    let checkbox = create_and_append('input', parent)
-    checkbox.type = "checkbox"
-    checkbox.setAttribute('onclick', 'set_visibility("word_list", this.checked)')
+    let cheats_label = create_and_append('label', parent)
+    cheats_label.innerHTML = 'cheats '
+    let cheats_checkbox = create_and_append('input', cheats_label, 'cheats_checkbox')
+    cheats_checkbox.type = "checkbox"
+    cheats_checkbox.setAttribute('onclick', 'set_visibility("word_list", this.checked)')
+
     let word_list_div = create_and_append('div', parent, "word_list")
     return word_list_div
 }
@@ -121,15 +122,17 @@ function init_settings(parent) {
 function fill_word_list(p_words) {
     word_list_div = document.getElementById('word_list')
     empty_element(word_list_div)
+    let options_stat = create_and_append('div', word_list_div)
+    options_stat.innerHTML = `options: ${p_words.length}`
     let table = create_and_append('table', word_list_div)
-    for (let [word, prob] of p_words.reverse()) {
+    for (let [word, prob] of p_words) {
         let row = create_and_append('tr', table)
         let cell = create_and_append('td', row)
         cell.innerHTML = word
         let cell2 = create_and_append('td', row)
         cell2.innerHTML = `${(prob*100).toFixed(4)}%`
     }
-    word_list_div.setAttribute('data-simplebar', "init")
+    // word_list_div.setAttribute('data-simplebar', "init")
 }
 
 function enter_letter(letter) {
