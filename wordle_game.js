@@ -127,10 +127,10 @@ class Game {
         if (!stats_visible)
             return
 
-        let { word_probs_entries, letters_probs } = this.solver.get_distributions()
+        let { word_probs_entries, letters_probs, total_letter_distr } = this.solver.get_distributions()
 
         this.ui.fill_word_list(word_probs_entries)
-        this.ui.fill_letter_distribution(letters_probs)
+        this.ui.fill_letter_distribution(letters_probs, total_letter_distr)
     }
 
     evaluate_word(mystery_word, guessed_word) {
@@ -371,7 +371,7 @@ class UI {
             for (let key of keys.split(",")) {
                 let btn = create_and_append('div', row, `${key}-key`, "keyboard_btn")
                 btn.innerHTML = key
-                btn.setAttribute('onclick', `key_down('${btn.innerHTML}')`)
+                btn.setAttribute('onclick', `document.value.ui.key_down('${btn.innerHTML}')`)
             }
         }
     }
@@ -408,12 +408,12 @@ class UI {
         }
     }
 
-    fill_letter_distribution(letters_probs) {
+    fill_letter_distribution(letters_probs, total_letter_distr) {
         let div = document.getElementById('game_screen_right')
         empty_element(div)
         let grid = create_and_append('div', div)
         grid.style.display = 'grid'
-        grid.style['grid-template-columns'] = 'auto '.repeat(letters_probs.length)
+        grid.style['grid-template-columns'] = 'auto '.repeat(letters_probs.length+2)
         for (let i in alphabet) {
             for (let pos in letters_probs) {
                 let letter = Object.keys(letters_probs[pos])[i]
@@ -423,6 +423,14 @@ class UI {
                 let color = `rgba(83, 141, 78,${prob})`
                 cell.style['background-color'] = color
             }
+            let empty = create_and_append('div', grid, null, "distr_cell")
+            empty.innerHTML = "&nbsp"
+
+            let letter = Object.keys(total_letter_distr)[i]
+            let total_cell = create_and_append('div', grid, null, "distr_cell")
+            total_cell.innerHTML = letter
+            let color = `rgba(181, 159, 59,${total_letter_distr[letter]})`
+            total_cell.style['background-color'] = color
         }
     }
 
@@ -527,27 +535,34 @@ class Solver {
     get_distributions() {
         let word_probs_entries = Object.entries(this.possible_word_probs)
         console.log(`options: ${word_probs_entries.length}`)
-        let letters_probs = this.get_letter_distribution(word_probs_entries)
-        return { word_probs_entries, letters_probs }
+        let { letters_probs, total_letter_distr } = this.get_letter_distribution(word_probs_entries)
+        return { word_probs_entries, letters_probs, total_letter_distr }
     }
 
     get_letter_distribution(word_probs_entries, word_prob_weight=0) {
         let letters_probs = []
+        let total_letter_distr = {}
         let arbitrary_word = word_probs_entries[0][0]
         for (let pos in arbitrary_word) {
             let pos_probs = {}
             for (let c of alphabet) {
                 pos_probs[c] = 0
+                if (pos == 0)
+                    total_letter_distr[c] = 0
             }
     
             for (let [word, prob] of word_probs_entries) {
-                if (!alphabet.includes(word[pos]))
+                let letter = word[pos]
+                if (!alphabet.includes(letter))
                     continue
-                pos_probs[word[pos]] += (1-word_prob_weight) + word_prob_weight*prob
+                let weight = (1-word_prob_weight) + word_prob_weight*prob
+                pos_probs[letter] += weight
+                total_letter_distr[letter] += weight
             }
             letters_probs.push(normalize_word_probs(order_words_by_prob(pos_probs)))
         }
-        return letters_probs
+        total_letter_distr = normalize_word_probs(order_words_by_prob(total_letter_distr))
+        return { letters_probs, total_letter_distr }
     }
 }
 
