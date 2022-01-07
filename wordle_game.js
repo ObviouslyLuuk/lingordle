@@ -127,10 +127,10 @@ class Game {
         if (!stats_visible)
             return
 
-        let { word_probs_entries, letters_probs, total_letter_distr } = this.solver.get_distributions()
+        let { word_probs_entries, letters_probs, presence_probs } = this.solver.get_distributions()
 
         this.ui.fill_word_list(word_probs_entries)
-        this.ui.fill_letter_distribution(letters_probs, total_letter_distr)
+        this.ui.fill_letter_distribution(letters_probs, presence_probs)
     }
 
     evaluate_word(mystery_word, guessed_word) {
@@ -408,7 +408,7 @@ class UI {
         }
     }
 
-    fill_letter_distribution(letters_probs, total_letter_distr) {
+    fill_letter_distribution(letters_probs, presence_probs) {
         let div = document.getElementById('game_screen_right')
         empty_element(div)
         let grid = create_and_append('div', div)
@@ -426,10 +426,10 @@ class UI {
             let empty = create_and_append('div', grid, null, "distr_cell")
             empty.innerHTML = "&nbsp"
 
-            let letter = Object.keys(total_letter_distr)[i]
+            let letter = Object.keys(presence_probs)[i]
             let total_cell = create_and_append('div', grid, null, "distr_cell")
             total_cell.innerHTML = letter
-            let color = `rgba(181, 159, 59,${total_letter_distr[letter]})`
+            let color = `rgba(181, 159, 59,${presence_probs[letter]})`
             total_cell.style['background-color'] = color
         }
     }
@@ -535,21 +535,18 @@ class Solver {
     get_distributions() {
         let word_probs_entries = Object.entries(this.possible_word_probs)
         console.log(`options: ${word_probs_entries.length}`)
-        let { letters_probs, total_letter_distr } = this.get_letter_distribution(word_probs_entries)
-        return { word_probs_entries, letters_probs, total_letter_distr }
+        let letters_probs = this.get_pos_distribution(word_probs_entries)
+        let presence_probs = this.get_presence_probs(word_probs_entries)
+        return { word_probs_entries, letters_probs, presence_probs }
     }
 
-    get_letter_distribution(word_probs_entries, word_prob_weight=0) {
+    get_pos_distribution(word_probs_entries, word_prob_weight=0) {
         let letters_probs = []
-        let total_letter_distr = {}
         let arbitrary_word = word_probs_entries[0][0]
         for (let pos in arbitrary_word) {
             let pos_probs = {}
-            for (let c of alphabet) {
+            for (let c of alphabet)
                 pos_probs[c] = 0
-                if (pos == 0)
-                    total_letter_distr[c] = 0
-            }
     
             for (let [word, prob] of word_probs_entries) {
                 let letter = word[pos]
@@ -557,12 +554,27 @@ class Solver {
                     continue
                 let weight = (1-word_prob_weight) + word_prob_weight*prob
                 pos_probs[letter] += weight
-                total_letter_distr[letter] += weight
             }
             letters_probs.push(normalize_word_probs(order_words_by_prob(pos_probs)))
         }
-        total_letter_distr = normalize_word_probs(order_words_by_prob(total_letter_distr))
-        return { letters_probs, total_letter_distr }
+        return letters_probs
+    }
+
+    get_presence_probs(word_probs_entries, word_prob_weight=0) {
+        let presence_probs = {}
+        for (let c of alphabet) {
+            presence_probs[c] = 0
+
+            for (let [word, prob] of word_probs_entries) {
+                let weight = (1-word_prob_weight) + word_prob_weight*prob
+                if (word.includes(c))
+                    presence_probs[c] += weight
+            }
+        }
+        for (let c of alphabet) {
+            presence_probs[c] /= word_probs_entries.length
+        }
+        return order_words_by_prob(presence_probs)
     }
 }
 
