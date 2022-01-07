@@ -107,15 +107,20 @@ class Game {
     }
 
     step() {
-        let current_cell = this.ui.current_cell
-        let guessed_word = this.get_guess(current_cell)
+        let current_row = this.ui.current_cell.parentElement
+        let guessed_word = this.get_guess(current_row)
         if (!guessed_word)
             return
-
-        let current_row = current_cell.parentElement
-        let result = this.attempt_word(guessed_word, current_row)
-        if (this.check_winstate(result, current_row))
-            return
+        
+        if (this.ui.inference) {
+            var result = this.ui.get_state(current_row)
+        } else {
+            var result = this.attempt_word(guessed_word, current_row)
+            if (this.check_winstate(result))
+                return
+        }
+        if (current_row.nextElementSibling)
+            this.ui.current_cell = current_row.nextElementSibling.firstChild        
         
         this.solver.update_possibilities(guessed_word, result)
         if (this.ui.stats_visible)
@@ -127,10 +132,23 @@ class Game {
         if (!stats_visible)
             return
 
-        let { word_probs_entries, letters_probs, presence_probs } = this.solver.get_distributions()
+        let { word_probs_entries, letters_probs, presence_probs } = this.solver.get_distributions(this.word_len)
 
         this.ui.fill_word_list(word_probs_entries)
         this.ui.fill_letter_distribution(letters_probs, presence_probs)
+    }
+
+    cell_update() {
+        this.solver.reset()
+
+        for (let row of document.querySelectorAll('.board_row')) {
+            let guessed_word = this.get_guess(row)
+            if (!guessed_word)
+                break
+            let result = this.ui.get_state(row)
+            this.solver.update_possibilities(guessed_word, result)
+        }
+        this.update_stats()
     }
 
     evaluate_word(mystery_word, guessed_word) {
@@ -158,26 +176,10 @@ class Game {
         this.ui.current_cell = null
     }
 
-    word_finished(current_cell) {
-        let is_last_cell = (current_cell.nextElementSibling == null)
-        let full_word = (is_last_cell && alphabet.includes(current_cell.innerHTML))
-        return full_word
-    }
-
-    get_guess(current_cell) {
-        if (!this.word_finished(current_cell)) {
-            this.ui.display_message("word not finished")
+    get_guess(row) {
+        let guessed_word = this.ui.get_input(row)
+        if (!guessed_word)
             return false
-        }
-
-        let word = []
-        let cell = current_cell
-        while (cell.previousElementSibling) {
-            word.unshift(cell.innerHTML)
-            cell = cell.previousElementSibling
-        }
-        word.unshift(cell.innerHTML)
-        let guessed_word = word.join('')
 
         if (!Object.keys(this.filtered_word_probs).includes(guessed_word)) {
             this.ui.display_message("word not in vocabulary")
@@ -193,13 +195,11 @@ class Game {
         return result
     }
 
-    check_winstate(result, current_row) {
+    check_winstate(result) {
         if (!result.includes("present") && !result.includes("absent")) {
             this.win_fn()
             return true
-        } else if (current_row.nextElementSibling)
-            this.ui.current_cell = current_row.nextElementSibling.firstChild
-        else
+        } else
             this.lose_fn()
         
         return false
@@ -270,6 +270,7 @@ class UI {
         window.addEventListener("keydown", (event) => {document.value.ui.key_down(keydict[event.keyCode])})
 
         this.stats_visible = false
+        this.inference = false
     }
 
     reset(word_len, attempts) {
@@ -346,11 +347,56 @@ class UI {
             for (let col = 0; col < word_len; col++) {
                 let cell = create_and_append('div', row, null, "board_cell")
                 cell.innerHTML = "&nbsp"
+
+                cell.setAttribute('data-state', 'none')
+                cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
             }
         }
         board.style['grid-template-rows'] = 'auto '.repeat(attempts)
 
         this.current_cell = board.firstChild.firstChild
+    }
+
+    switch_cell_state(cell) {
+        if (!this.inference || !alphabet.includes(cell.innerHTML))
+            return
+
+        let order = ["present", "correct", "absent"]
+        let new_state = order[0]
+        if (cell.dataset.state != 'none') {
+            let idx = order.indexOf(cell.dataset.state)
+            new_state = order[(idx+1)%order.length]
+        }
+        this.set_cell_state(cell, new_state)
+
+        if (this.word_finished(this.current_cell.parentElement))
+            document.value.cell_update()
+    }
+
+    set_cell_state(cell, state) {
+        let color = "transparent"
+        switch (state) {
+            case "correct":
+                color = this.correct_color
+                break;
+            case "present":
+                color = this.present_color
+                break;
+            case "absent":
+                color = this.absent_color
+                break;
+        }
+        cell.style["background-color"] = color
+        cell.style["border-color"] = color
+        cell.setAttribute('data-state', state)
+        if (state == 'none')
+            cell.style["border-color"] = 'gray'
+
+        if (!this.inference) {
+            let key = document.getElementById(`${cell.innerHTML}-key`)
+            if (key.style["background-color"] != this.correct_color)
+                key.style["background-color"] = color             
+        }
     }
 
     init_keyboard(parent) {
@@ -377,7 +423,13 @@ class UI {
     }
 
     init_settings(parent) {
-        let reset_btn = create_and_append('button', parent, 'reset_btn', 'btn')
+        let inference_label = create_and_append('label', parent)
+        inference_label.innerHTML = 'inference '
+        let inference_checkbox = create_and_append('input', inference_label, 'inference_checkbox')
+        inference_checkbox.type = "checkbox"
+        inference_checkbox.setAttribute('onclick', 'document.value.ui.inference=this.checked; document.value.reset()')
+
+        let reset_btn = create_and_append('div', parent, 'reset_btn', 'btn')
         reset_btn.innerHTML = "Play Again"
         reset_btn.setAttribute('onclick', 'document.value.reset()')
 
@@ -385,7 +437,7 @@ class UI {
         cheats_label.innerHTML = 'cheats '
         let cheats_checkbox = create_and_append('input', cheats_label, 'cheats_checkbox')
         cheats_checkbox.type = "checkbox"
-        cheats_checkbox.setAttribute('onclick', 'set_visibility("word_list", this.checked); document.value.update_stats(this.checked)')
+        cheats_checkbox.setAttribute('onclick', 'set_visibility("word_list", this.checked); document.value.update_stats(this.checked)')        
     
         let word_list_div = create_and_append('div', parent, "word_list")
         create_and_append('div', word_list_div, "options_stat")
@@ -451,31 +503,19 @@ class UI {
 
         if (is_last_cell && alphabet.includes(cell.innerHTML)) {
             cell.innerHTML = "&nbsp"
+            this.set_cell_state(cell, "none")
             return
         }
 
         prev_cell.innerHTML = "&nbsp"
+        this.set_cell_state(prev_cell, "none")
         this.current_cell = prev_cell
     }
 
     color_row(row, result) {
         let cell = row.firstChild
         for (let r of result) {
-            let color = this.absent_color
-            switch (r) {
-                case "correct":
-                    color = this.correct_color
-                    break;
-                case "present":
-                    color = this.present_color
-                    break;
-            }
-            cell.style["background-color"] = color
-            cell.style["border-color"] = color
-            let key = document.getElementById(`${cell.innerHTML}-key`)
-            if (key.style["background-color"] != this.correct_color)
-                key.style["background-color"] = color
-
+            this.set_cell_state(cell, r)
             cell = cell.nextElementSibling
         }
     }
@@ -488,13 +528,45 @@ class UI {
         setTimeout(() => { div.style['display'] = 'none' }, 2000)
     }
 
+    word_finished(row) {
+        return alphabet.includes(row.lastChild.innerHTML)
+    }
 
+    get_input(row) {
+        if (!this.word_finished(row)) {
+            this.display_message("word not finished")
+            return false
+        }
+
+        let word = []
+        for (let cell of row.children) {
+            word.push(cell.innerHTML)
+        }
+        return word.join('')        
+    }
+
+    get_state(row) {
+        if (!this.word_finished(row)) {
+            this.display_message("word not finished")
+            return false
+        }
+
+        let result = []
+        for (let cell of row.children) {
+            if (cell.dataset.state == 'none')
+                this.set_cell_state(cell, 'absent')
+            result.push(cell.dataset.state)
+            cell = cell.previousElementSibling
+        }      
+        return result
+    }
 
 }
 
 class Solver {
     constructor(possibilities, filtered_word_probs) {
-        this.vocab_probs = filtered_word_probs
+        this.full_vocab_probs = filtered_word_probs
+        this.initial_possibilities = possibilities
         this.possible_word_probs = possibilities
     }
 
@@ -532,18 +604,17 @@ class Solver {
         return this.possible_word_probs
     }    
 
-    get_distributions() {
+    get_distributions(word_len) {
         let word_probs_entries = Object.entries(this.possible_word_probs)
         console.log(`options: ${word_probs_entries.length}`)
-        let letters_probs = this.get_pos_distribution(word_probs_entries)
+        let letters_probs = this.get_pos_distribution(word_probs_entries, word_len)
         let presence_probs = this.get_presence_probs(word_probs_entries)
         return { word_probs_entries, letters_probs, presence_probs }
     }
 
-    get_pos_distribution(word_probs_entries, word_prob_weight=0) {
+    get_pos_distribution(word_probs_entries, word_len, word_prob_weight=0) {
         let letters_probs = []
-        let arbitrary_word = word_probs_entries[0][0]
-        for (let pos in arbitrary_word) {
+        for (let pos = 0; pos < word_len; pos++) {
             let pos_probs = {}
             for (let c of alphabet)
                 pos_probs[c] = 0
@@ -575,6 +646,10 @@ class Solver {
             presence_probs[c] /= word_probs_entries.length
         }
         return order_words_by_prob(presence_probs)
+    }
+
+    reset() {
+        this.possible_word_probs = this.initial_possibilities
     }
 }
 
