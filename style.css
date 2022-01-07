@@ -99,6 +99,7 @@
     color: black;
     position: absolute;
     align-self: center;
+    justify-content: center;
     background-color: #ffffffee;
     padding: 20px;
     border-radius: 5px;
