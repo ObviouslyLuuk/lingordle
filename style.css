@@ -48,10 +48,14 @@
 
 .game_screen_division {
     display: grid;
-    justify-items: center;
+    justify-content: center;
     align-content: center;
     width: 100%;
     overflow: hidden;
+}
+#game_screen_mid {
+  justify-content: normal;
+  justify-items: center;
 }
 
 #board {
@@ -97,16 +101,16 @@
   border-color: var(--absent_color);
 }
 
-#word_list {
+.word_list {
     color: white;
     overflow: auto;
     width: 100%;
     height: 100%;
     padding: 10px;
-    display: none;
+    display: grid;
 }
 
-#word_list_table_div {
+.word_list_table_div {
     overflow: auto;
     width: 100%;
     height: 100%;
@@ -115,6 +119,22 @@
 .distr_cell {
     display: grid;
     justify-content: center;
+}
+
+#settings_overlay {
+  position: absolute;
+  display: none;
+  grid-template-columns: auto auto;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+#btns_container {
+  display: grid;
+}
+#btns_container .btn {
+  grid-row: 1;
+  margin: 5px;
 }
 
 #message {
@@ -131,6 +151,10 @@
 
 label {
     color: white;
+}
+
+.simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
+  background-color: white;
 }
 
 

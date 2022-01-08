@@ -69,6 +69,11 @@ function load_word_probs(language) {
     return id
 }
 
+function move_element(element, new_parent) {
+    element.parentElement.removeChild(element)
+    new_parent.appendChild(element)
+}
+
 // Data manipulation
 function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
@@ -105,7 +110,8 @@ class Game {
 
         this.ui = new UI(word_len, attempts)
         this.solver = new Solver(this.mystery_words)
-        this.update_stats()  
+        this.update_stats()
+        this.updated = true
     }
 
     step() {
@@ -126,25 +132,65 @@ class Game {
             this.ui.set_current_row(next_row)
         
         if (this.hard_mode)
-            this.allowed_guesses = this.solver.get_possible_word_probs(this.allowed_guesses, guessed_word, result)
+            this.update_allowed_guesses(guessed_word, result)
 
-        this.solver.possible_word_probs = this.solver.get_possible_word_probs(this.solver.possible_word_probs, guessed_word, result)
-        this.update_stats()
+        this.updated = false
+        if (this.ui.stats_visible) {
+            this.solver.update_possible_words(guessed_word, result)
+            this.update_stats()         
+        }
     }
 
-    update_stats(stats_visible=true) {
-        this.ui.stats_visible = stats_visible
-        if (!stats_visible)
-            return
-
+    update_stats() {
         let { word_probs_entries, letters_probs, presence_probs } = this.solver.get_distributions(this.word_len)
 
         this.ui.fill_word_list(word_probs_entries)
         this.ui.fill_letter_distribution(letters_probs, presence_probs)
-        this.solver.score_words(this.allowed_guesses, letters_probs, presence_probs)
+        let word_scores = this.solver.score_words(this.allowed_guesses, letters_probs, presence_probs, this.hard_mode)
+        this.ui.fill_word_list(Object.entries(word_scores).splice(0, 25), 'best', "BEST GUESSES")
+
+        this.updated = true
+    }
+
+    word_allowed(guessed_word, result, word) {
+        for (let i in result) {
+            let c = guessed_word[i]
+
+            switch (result[i]) {
+                case "correct":
+                    if (word[i] != c)
+                        return false
+                    break;
+                case "present":
+                    if (!word.includes(c))
+                        return false
+                    break;
+                default:
+                    break;
+            }
+        }
+        return true
+    }
+
+    update_allowed_guesses(guessed_word, result) {
+        if (!this.hard_mode)
+            return this.allowed_guesses
+
+        let word_probs = this.allowed_guesses
+        let new_word_probs = {}
+        for (let [word, prob] of Object.entries(word_probs)) {
+            if (this.word_allowed(guessed_word, result, word))
+                new_word_probs[word] = prob
+        }
+        this.allowed_guesses = normalize_word_probs(new_word_probs)
+        return this.allowed_guesses
     }
 
     cell_update() {
+        this.updated = false
+        if (!this.ui.stats_visible)
+            return
+
         this.allowed_guesses = this.filtered_word_probs
         this.solver.reset()
 
@@ -158,8 +204,8 @@ class Game {
             let result = this.ui.get_state(row)
 
             if (this.hard_mode)
-                this.allowed_guesses = this.solver.get_possible_word_probs(this.allowed_guesses, guessed_word, result)
-            this.solver.possible_word_probs = this.solver.get_possible_word_probs(this.solver.possible_word_probs, guessed_word, result)
+                this.update_allowed_guesses(guessed_word, result)
+            this.solver.update_possible_words(guessed_word, result)
         }
         this.update_stats()
     }
@@ -195,7 +241,7 @@ class Game {
             return false
 
         if (check_vocab && !Object.keys(this.allowed_guesses).includes(guessed_word)) {
-            this.ui.display_message(guessed_word+" not in vocabulary")
+            this.ui.display_message(guessed_word+" isn't a valid guess")
             return false
         }
         return guessed_word
@@ -275,12 +321,12 @@ class UI {
         this.init_settings(screen_left)
         this.reset(word_len, attempts)
 
-        this.resize()
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {document.value.ui.key_down(keydict[event.keyCode])})
 
         this.stats_visible = false
         this.inference = false
+        this.resize()
     }
 
     reset(word_len, attempts) {
@@ -294,13 +340,30 @@ class UI {
         let screen_left = document.getElementById('game_screen_left')
         let screen_mid = document.getElementById('game_screen_mid')
         let screen_right = document.getElementById('game_screen_right')
+        let settings_overlay = document.getElementById('settings_overlay')
+
+        let rendered = Boolean(document.value.ui)
 
         screen_left.style['height'] = `${screen_mid.offsetHeight}px`
         if (document.body.offsetHeight > document.body.offsetWidth) {
-            screen_left.style.display = "none"
-            screen_right.style.display = "none"
+            move_element(screen_left, settings_overlay)
+            move_element(screen_right, settings_overlay)
             game_screen.style['grid-template-columns'] = "auto"
-            screen_mid.style.width = `${document.body.offsetWidth}px`
+            screen_mid.style.width = `${document.body.offsetWidth*.95}px`
+            // if (rendered)
+            //     document.value.ui.set_stat_visibility(false)
+            // else
+            //     this.set_stat_visibility(false)
+        } else {
+            move_element(screen_left, game_screen)
+            move_element(screen_mid, game_screen)
+            move_element(screen_right, game_screen)
+            game_screen.style['grid-template-columns'] = "15% 70% 15%"
+            screen_mid.style.width = `100%`
+            // if (rendered)
+            //     document.value.ui.set_stat_visibility(true)
+            // else
+            //     this.set_stat_visibility(true)                
         }
     }
 
@@ -314,22 +377,34 @@ class UI {
         }
     }
 
-    add_credit_button(parent) {
-        let credit = create_and_append('a', parent, null, 'btn')
-        credit.innerHTML = "ORIGINAL WORDLE"
-        credit.href = 'https://www.powerlanguage.co.uk/wordle/'
-        credit.target="_blank"
-        credit.rel="noopener noreferrer"
-        credit.style.margin = '5px'
-    }    
+    add_buttons(parent) {
+        let div = create_and_append('div', parent, 'btns_container')
+
+        let settings_btn = create_and_append('div', div, 'settings_btn', 'btn')
+        settings_btn.innerHTML = "?"
+        settings_btn.setAttribute('onclick', 'document.value.ui.set_stat_visibility(true)')
+
+        let reset_btn = create_and_append('div', div, 'reset_btn', 'btn')
+        reset_btn.innerHTML = "Play Again"
+        reset_btn.setAttribute('onclick', 'document.value.reset()')
+    }
+
+    set_stat_visibility(visible) {
+        set_visibility("settings_overlay", visible)
+        document.value.ui.stats_visible=visible
+        if (visible && !document.value.updated) {
+            document.value.cell_update()
+        }
+    }
 
     init_game_screen() {
         let game_screen = create_and_append('div', null, "game_screen")
         let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
         let screen_mid = create_and_append('div', game_screen, "game_screen_mid", "game_screen_division")
         let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
+        create_and_append('div', screen_mid, "settings_overlay")
         create_and_append('div', screen_mid, "message")
-        this.add_credit_button(screen_mid)
+        this.add_buttons(screen_mid)
 
         return { screen_left, screen_mid, screen_right }
     }
@@ -423,40 +498,61 @@ class UI {
     }
 
     init_settings(parent) {
+        let close_settings_btn = create_and_append('div', parent, 'close_settings_btn', 'btn')
+        close_settings_btn.innerHTML = "Close Settings"
+        close_settings_btn.setAttribute('onclick', 'document.value.ui.set_stat_visibility(false)')
+
         let inference_label = create_and_append('label', parent)
         inference_label.innerHTML = 'inference '
         let inference_checkbox = create_and_append('input', inference_label, 'inference_checkbox')
         inference_checkbox.type = "checkbox"
         inference_checkbox.setAttribute('onclick', 'document.value.ui.inference=this.checked; document.value.reset()')
 
-        let reset_btn = create_and_append('div', parent, 'reset_btn', 'btn')
-        reset_btn.innerHTML = "Play Again"
-        reset_btn.setAttribute('onclick', 'document.value.reset()')
+        let hard_mode_label = create_and_append('label', parent)
+        hard_mode_label.innerHTML = 'hard mode '
+        let hard_mode_checkbox = create_and_append('input', hard_mode_label, 'hard_mode_checkbox')
+        hard_mode_checkbox.type = "checkbox"
+        hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')        
 
-        let cheats_label = create_and_append('label', parent)
-        cheats_label.innerHTML = 'cheats '
-        let cheats_checkbox = create_and_append('input', cheats_label, 'cheats_checkbox')
-        cheats_checkbox.type = "checkbox"
-        cheats_checkbox.setAttribute('onclick', 'set_visibility("word_list", this.checked); document.value.update_stats(this.checked)')        
+        // let cheats_label = create_and_append('label', parent)
+        // cheats_label.innerHTML = 'cheats '
+        // let cheats_checkbox = create_and_append('input', cheats_label, 'cheats_checkbox')
+        // cheats_checkbox.type = "checkbox"
+        // cheats_checkbox.setAttribute('onclick', 'set_visibility("option_list", this.checked); document.value.update_stats(this.checked)')        
     
-        let word_list_div = create_and_append('div', parent, "word_list")
+        let best_list_div = create_and_append('div', parent, "best_list", "word_list")
+        create_and_append('div', best_list_div, "best_stat")
+        let best_list_table_div = create_and_append('div', best_list_div, null, "word_list_table_div")
+        create_and_append('table', best_list_table_div, "best_table")
+        best_list_table_div.setAttribute('data-simplebar', "init")   
+
+        let word_list_div = create_and_append('div', parent, "options_list", "word_list")
         create_and_append('div', word_list_div, "options_stat")
-        let word_list_table_div = create_and_append('div', word_list_div, "word_list_table_div")
-        create_and_append('table', word_list_table_div, 'word_list_table')
+        let word_list_table_div = create_and_append('div', word_list_div, null, "word_list_table_div")
+        create_and_append('table', word_list_table_div, "options_table")
         word_list_table_div.setAttribute('data-simplebar', "init")
+
+        let credit = create_and_append('a', parent, null, 'btn')
+        credit.innerHTML = "ORIGINAL WORDLE"
+        credit.href = 'https://www.powerlanguage.co.uk/wordle/'
+        credit.target="_blank"
+        credit.rel="noopener noreferrer"
+
         return word_list_div
     }
 
-    fill_word_list(word_probs_entries) {
-        document.getElementById('options_stat').innerHTML = `OPTIONS: ${word_probs_entries.length}`
-        let table = document.getElementById('word_list_table')
+    fill_word_list(word_probs_entries, name="options", title="OPTIONS") {
+        document.getElementById(`${name}_stat`).innerHTML = `${title}: ${word_probs_entries.length}`
+        let table = document.getElementById(`${name}_table`)
         empty_element(table)
-        for (let [word, prob] of word_probs_entries) {
+        for (let [word, value] of word_probs_entries) {
             let row = create_and_append('tr', table)
             let cell = create_and_append('td', row)
             cell.innerHTML = word
             let cell2 = create_and_append('td', row)
-            cell2.innerHTML = `${(prob*100).toFixed(4)}%`
+            cell2.innerHTML = value.toFixed(2)
+            if (name == "options")
+                cell2.innerHTML = `${(value*100).toFixed(4)}%`
         }
     }
 
@@ -593,13 +689,15 @@ class Solver {
         return true
     }
 
-    get_possible_word_probs(word_probs, guessed_word, result) {
+    update_possible_words(guessed_word, result) {
+        let word_probs = this.possible_word_probs
         let new_word_probs = {}
         for (let [word, prob] of Object.entries(word_probs)) {
             if (this.word_possible(guessed_word, result, word))
                 new_word_probs[word] = prob
         }
-        return normalize_word_probs(new_word_probs)
+        this.possible_word_probs = normalize_word_probs(new_word_probs)
+        return this.possible_word_probs
     }
 
     get_distributions(word_len) {
@@ -651,17 +749,31 @@ class Solver {
         return 1 - certainty
     }
 
-    score_words(vocab, letters_probs, presence_probs) {
+    score_words(vocab, letters_probs, presence_probs, hard_mode) {
         let vocab_scores = {}
         for (let [word, prob] of Object.entries(vocab)) {
             vocab_scores[word] = 0
-            for (let pos in word) {
-                vocab_scores[word] += this.discriminative_power(letters_probs[pos][word[pos]])
-            }
-            for (let c of alphabet) {
-                if (!word.includes(c))
-                    continue
-                vocab_scores[word] += this.discriminative_power(presence_probs[c])
+
+            if (hard_mode) {
+                for (let pos in word) { // Discourage correct positions
+                    vocab_scores[word] -= letters_probs[pos][word[pos]]
+                }
+                for (let c of alphabet) {
+                    if (!word.includes(c))
+                        continue
+                    // +.25 is a bias towards gettings "absents"
+                    vocab_scores[word] += this.discriminative_power(presence_probs[c]+.25)
+                }
+            } 
+            else {
+                for (let pos in word) {
+                    vocab_scores[word] += this.discriminative_power(letters_probs[pos][word[pos]])
+                }
+                for (let c of alphabet) {
+                    if (!word.includes(c))
+                        continue
+                    vocab_scores[word] += this.discriminative_power(presence_probs[c])
+                }
             }
         }
         let poss_words = Object.keys(this.possible_word_probs)
@@ -669,7 +781,7 @@ class Solver {
             for (let word of poss_words)
                 vocab_scores[word] += 1000
         }
-        console.log(order_words_by_value(vocab_scores))
+        return order_words_by_value(vocab_scores)
     }
 
     reset() {
@@ -683,6 +795,6 @@ let checkExist = setInterval(function() {
     if (WORDS_BY_LANG[language]) {
         console.log("Words loaded!");
         clearInterval(checkExist);
-        new Game(5, 6, language, true, true)
+        new Game(5, 6, language, true, false)
     }
 }, 10); // check every 10ms
