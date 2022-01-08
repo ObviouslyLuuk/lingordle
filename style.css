@@ -1,4 +1,9 @@
 /* Luuk: */
+:root {
+  --correct_color: #538d4e;
+  --present_color: #b59f3b;
+  --absent_color: #3a3a3c;
+}
 
 /* BUTTONS */
 * {
@@ -59,6 +64,10 @@
     grid-gap: 5px;
 }
 
+.current_row .board_cell {
+  border: 2px solid white;
+}
+
 .board_cell {
     width: 100%;
     display: inline-flex;
@@ -73,6 +82,19 @@
     text-transform: uppercase;
     user-select: none;
     border: 2px solid gray;
+}
+
+*[data-state="correct"] {
+  background-color: var(--correct_color);
+  border-color: var(--correct_color);
+}
+*[data-state="present"] {
+  background-color: var(--present_color);
+  border-color: var(--present_color);
+}
+*[data-state="absent"] {
+  background-color: var(--absent_color);
+  border-color: var(--absent_color);
 }
 
 #word_list {

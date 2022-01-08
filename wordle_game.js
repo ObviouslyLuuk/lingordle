@@ -112,15 +112,16 @@ class Game {
         if (!guessed_word)
             return
         
+        let next_row = current_row.nextElementSibling
         if (this.ui.inference) {
             var result = this.ui.get_state(current_row)
         } else {
             var result = this.attempt_word(guessed_word, current_row)
-            if (this.check_winstate(result))
+            if (this.check_winstate(result, !next_row))
                 return
         }
-        if (current_row.nextElementSibling)
-            this.ui.current_cell = current_row.nextElementSibling.firstChild        
+        if (next_row)
+            this.ui.set_current_row(next_row)
         
         this.solver.update_possibilities(guessed_word, result)
         if (this.ui.stats_visible)
@@ -142,6 +143,8 @@ class Game {
         this.solver.reset()
 
         for (let row of document.querySelectorAll('.board_row')) {
+            if (!alphabet.includes(row.firstChild.innerHTML))
+                break
             let guessed_word = this.get_guess(row)
             if (!guessed_word)
                 break
@@ -195,11 +198,11 @@ class Game {
         return result
     }
 
-    check_winstate(result) {
+    check_winstate(result, last_attempt=false) {
         if (!result.includes("present") && !result.includes("absent")) {
             this.win_fn()
             return true
-        } else
+        } else if (last_attempt)
             this.lose_fn()
         
         return false
@@ -254,11 +257,7 @@ class Game {
 
 
 class UI {
-    constructor(word_len, attempts, correct_color="#538d4e", present_color="#b59f3b", absent_color="#3a3a3c") {
-        this.correct_color = correct_color
-        this.present_color = present_color
-        this.absent_color = absent_color
-
+    constructor(word_len, attempts) {
         this.current_cell = null
 
         let { screen_left, screen_mid, screen_right } = this.init_game_screen()
@@ -341,8 +340,7 @@ class UI {
         for (let row = 0; row < attempts; row++) {
             let row = create_and_append('div', board, null, "board_row")
             row.style["grid-gap"] = `${grid_gap}px`   
-            let inter_column_gap_pct = inter_column_gaps/board.offsetWidth*100
-            row.style["grid-template-columns"] = `${(100-inter_column_gap_pct)/word_len}% `.repeat(word_len)
+            row.style["grid-template-columns"] = `repeat(${word_len}, minmax(0, 1fr))`
 
             for (let col = 0; col < word_len; col++) {
                 let cell = create_and_append('div', row, null, "board_cell")
@@ -352,9 +350,9 @@ class UI {
                 cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
             }
         }
-        board.style['grid-template-rows'] = 'auto '.repeat(attempts)
+        board.style['grid-template-rows'] = `repeat(${attempts}, minmax(0, 1fr))`
 
-        this.current_cell = board.firstChild.firstChild
+        this.set_current_row(board.firstChild)
     }
 
     switch_cell_state(cell) {
@@ -369,34 +367,24 @@ class UI {
         }
         this.set_cell_state(cell, new_state)
 
-        if (this.word_finished(this.current_cell.parentElement))
-            document.value.cell_update()
+        document.value.cell_update()
     }
 
     set_cell_state(cell, state) {
-        let color = "transparent"
-        switch (state) {
-            case "correct":
-                color = this.correct_color
-                break;
-            case "present":
-                color = this.present_color
-                break;
-            case "absent":
-                color = this.absent_color
-                break;
-        }
-        cell.style["background-color"] = color
-        cell.style["border-color"] = color
         cell.setAttribute('data-state', state)
-        if (state == 'none')
-            cell.style["border-color"] = 'gray'
-
-        if (!this.inference) {
+        if (!this.inference && alphabet.includes(cell.innerHTML)) {
             let key = document.getElementById(`${cell.innerHTML}-key`)
-            if (key.style["background-color"] != this.correct_color)
-                key.style["background-color"] = color             
+            if (key.dataset.state != "correct")
+                key.setAttribute('data-state', state)            
         }
+    }
+
+    set_current_row(new_row) {
+        let current_cell = this.current_cell
+        if (current_cell && current_cell.parentElement)
+            current_cell.parentElement.setAttribute('class', 'board_row')
+        this.current_cell = new_row.firstChild
+        new_row.setAttribute('class', 'board_row current_row')        
     }
 
     init_keyboard(parent) {
@@ -418,6 +406,7 @@ class UI {
                 let btn = create_and_append('div', row, `${key}-key`, "keyboard_btn")
                 btn.innerHTML = key
                 btn.setAttribute('onclick', `document.value.ui.key_down('${btn.innerHTML}')`)
+                btn.setAttribute('data-state', 'none')
             }
         }
     }
