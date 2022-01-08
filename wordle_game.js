@@ -70,8 +70,8 @@ function load_word_probs(language) {
 }
 
 // Data manipulation
-function order_words_by_prob(word_probs) {
-    return Object.fromEntries(Object.entries(word_probs).sort(([,prob1],[,prob2]) => prob2-prob1))
+function order_words_by_value(word_values) {
+    return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
 }
 
 function normalize_word_probs(word_probs) {
@@ -137,6 +137,7 @@ class Game {
 
         this.ui.fill_word_list(word_probs_entries)
         this.ui.fill_letter_distribution(letters_probs, presence_probs)
+        this.solver.score_words(this.filtered_word_probs, letters_probs, presence_probs)
     }
 
     cell_update() {
@@ -553,8 +554,7 @@ class UI {
 }
 
 class Solver {
-    constructor(possibilities, filtered_word_probs) {
-        this.full_vocab_probs = filtered_word_probs
+    constructor(possibilities) {
         this.initial_possibilities = possibilities
         this.possible_word_probs = possibilities
     }
@@ -615,7 +615,7 @@ class Solver {
                 let weight = (1-word_prob_weight) + word_prob_weight*prob
                 pos_probs[letter] += weight
             }
-            letters_probs.push(normalize_word_probs(order_words_by_prob(pos_probs)))
+            letters_probs.push(normalize_word_probs(order_words_by_value(pos_probs)))
         }
         return letters_probs
     }
@@ -634,7 +634,28 @@ class Solver {
         for (let c of alphabet) {
             presence_probs[c] /= word_probs_entries.length
         }
-        return order_words_by_prob(presence_probs)
+        return order_words_by_value(presence_probs)
+    }
+
+    discriminative_power(prob) {
+        let certainty = Math.abs(1 - prob*2) // Closer to 0 means a more even split
+        return 1 - certainty
+    }
+
+    score_words(vocab, letters_probs, presence_probs) {
+        let vocab_scores = {}
+        for (let [word, prob] of Object.entries(vocab)) {
+            vocab_scores[word] = 0
+            for (let pos in word) {
+                vocab_scores[word] += this.discriminative_power(letters_probs[pos][word[pos]])
+            }
+            for (let c of alphabet) {
+                if (!word.includes(c))
+                    continue
+                vocab_scores[word] += this.discriminative_power(presence_probs[c])
+            }
+        }
+        console.log(order_words_by_value(vocab_scores))
     }
 
     reset() {
