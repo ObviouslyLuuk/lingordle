@@ -85,24 +85,26 @@ function normalize_word_probs(word_probs) {
 
 // Classes
 class Game {
-    constructor(word_len=5, attempts=6, language="english", wordle_words=true) {
+    constructor(word_len=5, attempts=6, language="wordle", wordle_words=true, hard_mode=false) {
         document.value = this
 
         this.word_len = word_len
         this.attempts = attempts
         this.language = language
         this.wordle_words = wordle_words
+        this.hard_mode = hard_mode
 
         this.word_probs = WORDS_BY_LANG[language]
         this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
-        this.possibilities = this.get_possibilities(language, word_len, wordle_words)
+        this.allowed_guesses = this.filtered_word_probs
+        this.mystery_words = this.get_mystery_words(language, word_len, wordle_words)
         this.mystery_word = multinomial_sample(
-            Object.keys(this.possibilities), 
-            Object.values(this.possibilities)
+            Object.keys(this.mystery_words), 
+            Object.values(this.mystery_words)
         )
 
         this.ui = new UI(word_len, attempts)
-        this.solver = new Solver(this.possibilities, this.filtered_word_probs)
+        this.solver = new Solver(this.mystery_words)
         this.update_stats()  
     }
 
@@ -123,9 +125,11 @@ class Game {
         if (next_row)
             this.ui.set_current_row(next_row)
         
-        this.solver.update_possibilities(guessed_word, result)
-        if (this.ui.stats_visible)
-            this.update_stats()
+        if (this.hard_mode)
+            this.allowed_guesses = this.solver.get_possible_word_probs(this.allowed_guesses, guessed_word, result)
+
+        this.solver.possible_word_probs = this.solver.get_possible_word_probs(this.solver.possible_word_probs, guessed_word, result)
+        this.update_stats()
     }
 
     update_stats(stats_visible=true) {
@@ -137,20 +141,25 @@ class Game {
 
         this.ui.fill_word_list(word_probs_entries)
         this.ui.fill_letter_distribution(letters_probs, presence_probs)
-        this.solver.score_words(this.filtered_word_probs, letters_probs, presence_probs)
+        this.solver.score_words(this.allowed_guesses, letters_probs, presence_probs)
     }
 
     cell_update() {
+        this.allowed_guesses = this.filtered_word_probs
         this.solver.reset()
 
         for (let row of document.querySelectorAll('.board_row')) {
             if (!alphabet.includes(row.firstChild.innerHTML))
                 break
-            let guessed_word = this.get_guess(row)
+            let check_vocab = (row == this.ui.current_cell.parentElement)
+            let guessed_word = this.get_guess(row, check_vocab)
             if (!guessed_word)
                 break
             let result = this.ui.get_state(row)
-            this.solver.update_possibilities(guessed_word, result)
+
+            if (this.hard_mode)
+                this.allowed_guesses = this.solver.get_possible_word_probs(this.allowed_guesses, guessed_word, result)
+            this.solver.possible_word_probs = this.solver.get_possible_word_probs(this.solver.possible_word_probs, guessed_word, result)
         }
         this.update_stats()
     }
@@ -180,13 +189,13 @@ class Game {
         this.ui.current_cell = null
     }
 
-    get_guess(row) {
+    get_guess(row, check_vocab=true) {
         let guessed_word = this.ui.get_input(row)
         if (!guessed_word)
             return false
 
-        if (!Object.keys(this.filtered_word_probs).includes(guessed_word)) {
-            this.ui.display_message("word not in vocabulary")
+        if (check_vocab && !Object.keys(this.allowed_guesses).includes(guessed_word)) {
+            this.ui.display_message(guessed_word+" not in vocabulary")
             return false
         }
         return guessed_word
@@ -218,16 +227,16 @@ class Game {
         return normalize_word_probs(filtered_word_probs)
     }
 
-    get_possibilities(language, word_len, wordle_words) {
-        if (language == "english" && word_len == 5 && wordle_words) {
-            this.possibilities = {}
+    get_mystery_words(language, word_len, wordle_words) {
+        if (language == "wordle" && word_len == 5 && wordle_words) {
+            this.mystery_words = {}
             for (let word of WORDLE_WORDS)
-                this.possibilities[word] = 1
-            this.possibilities = normalize_word_probs(this.possibilities)
+                this.mystery_words[word] = 1
+            this.mystery_words = normalize_word_probs(this.mystery_words)
         } else {
-            this.possibilities = this.filtered_word_probs
+            this.mystery_words = this.allowed_guesses
         }
-        return this.possibilities
+        return this.mystery_words
     }
 
     reset(word_len=null, language=null, attempts=null) {
@@ -242,16 +251,17 @@ class Game {
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         }
 
-        this.possibilities = this.get_possibilities(this.language, word_len, this.wordle_words)
+        this.allowed_guesses = this.filtered_word_probs
+        this.mystery_words = this.get_mystery_words(this.language, word_len, this.wordle_words)
         this.mystery_word = multinomial_sample(
-            Object.keys(this.possibilities), 
-            Object.values(this.possibilities)
+            Object.keys(this.mystery_words), 
+            Object.values(this.mystery_words)
         )
         if (attempts)
             this.attempts = attempts
 
         this.ui.reset(word_len, this.attempts)
-        this.solver = new Solver(this.possibilities, this.filtered_word_probs)
+        this.solver = new Solver(this.mystery_words)
         this.update_stats()
     }
 }
@@ -581,17 +591,16 @@ class Solver {
             }
         }
         return true
-    }    
+    }
 
-    update_possibilities(guessed_word, result) {
+    get_possible_word_probs(word_probs, guessed_word, result) {
         let new_word_probs = {}
-        for (let [word, prob] of Object.entries(this.possible_word_probs)) {
+        for (let [word, prob] of Object.entries(word_probs)) {
             if (this.word_possible(guessed_word, result, word))
                 new_word_probs[word] = prob
         }
-        this.possible_word_probs = normalize_word_probs(new_word_probs)
-        return this.possible_word_probs
-    }    
+        return normalize_word_probs(new_word_probs)
+    }
 
     get_distributions(word_len) {
         let word_probs_entries = Object.entries(this.possible_word_probs)
@@ -655,6 +664,11 @@ class Solver {
                 vocab_scores[word] += this.discriminative_power(presence_probs[c])
             }
         }
+        let poss_words = Object.keys(this.possible_word_probs)
+        if (poss_words.length <= 2) {
+            for (let word of poss_words)
+                vocab_scores[word] += 1000
+        }
         console.log(order_words_by_value(vocab_scores))
     }
 
@@ -663,12 +677,12 @@ class Solver {
     }
 }
 
-let language = "english"
+let language = "wordle"
 let id = load_word_probs(language)
 let checkExist = setInterval(function() {
     if (WORDS_BY_LANG[language]) {
         console.log("Words loaded!");
         clearInterval(checkExist);
-        new Game(5, 6, language)
+        new Game(5, 6, language, true, true)
     }
 }, 10); // check every 10ms
