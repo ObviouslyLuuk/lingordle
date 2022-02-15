@@ -28,6 +28,15 @@ function sum_array(array) {
     return sum
 }
 
+function sigmoid(array, constant=0) {
+    new_array = []
+    for (let x of array) {
+        x = x - constant
+        new_array.push( 1 / (1 + Math.pow(Math.E, -x)) )
+    }
+    return new_array
+}
+
 // HTML
 function create_and_append(type, parent=null, id=null, class_=null) {
     if (parent == null)
@@ -74,6 +83,21 @@ function move_element(element, new_parent) {
     new_parent.appendChild(element)
 }
 
+function respondToVisibility(element, callback) {
+    // https://stackoverflow.com/questions/1462138/event-listener-for-when-element-becomes-visible
+    var options = {
+        root: document.documentElement,
+    };
+  
+    var observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            callback(entry.intersectionRatio > 0);
+        });
+    }, options);
+  
+    observer.observe(element);
+}
+
 // Data manipulation
 function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
@@ -90,7 +114,7 @@ function normalize_word_probs(word_probs) {
 
 // Classes
 class Game {
-    constructor(word_len=5, attempts=6, language="wordle", wordle_words=true, hard_mode=false) {
+    constructor(word_len=5, attempts=6, language="wordle", wordle_words=true, hard_mode=false, cheats=false) {
         document.value = this
 
         this.word_len = word_len
@@ -98,20 +122,25 @@ class Game {
         this.language = language
         this.wordle_words = wordle_words
         this.hard_mode = hard_mode
+        this.cheats = cheats
 
         this.word_probs = WORDS_BY_LANG[language]
         this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         this.allowed_guesses = this.filtered_word_probs
-        this.mystery_words = this.get_mystery_words(language, word_len, wordle_words)
+        this.mystery_words = normalize_word_probs(
+            this.get_mystery_words(language, word_len, wordle_words)
+        )
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
-            Object.values(this.mystery_words)
+            sigmoid(Object.values(this.mystery_words))
         )
 
         this.ui = new UI(word_len, attempts)
         this.solver = new Solver(this.mystery_words)
-        this.update_stats()
-        this.updated = true
+        if (cheats) {
+            this.update_stats()
+            this.updated = true
+        }
     }
 
     step() {
@@ -137,19 +166,23 @@ class Game {
         this.updated = false
         if (this.ui.stats_visible) {
             this.solver.update_possible_words(guessed_word, result)
-            this.update_stats()         
+            this.update_stats()
         }
     }
 
     update_stats() {
-        let { word_probs_entries, letters_probs, presence_probs } = this.solver.get_distributions(this.word_len)
+        let game = document.value
+        if (game.updated) {
+            return }
 
-        this.ui.fill_word_list(word_probs_entries)
-        this.ui.fill_letter_distribution(letters_probs, presence_probs)
-        let word_scores = this.solver.score_words(this.allowed_guesses, letters_probs, presence_probs, this.hard_mode)
-        this.ui.fill_word_list(Object.entries(word_scores).splice(0, 25), 'best', "BEST GUESSES")
+        let { word_probs_entries, letters_probs, presence_probs } = game.solver.get_distributions(game.word_len)
 
-        this.updated = true
+        game.ui.fill_word_list(word_probs_entries)
+        game.ui.fill_letter_distribution(letters_probs, presence_probs)
+        let word_scores = game.solver.score_words(game.allowed_guesses, letters_probs, presence_probs, game.hard_mode)
+        game.ui.fill_word_list(Object.entries(word_scores).splice(0, 25), 'best', "BEST GUESSES")
+
+        game.updated = true
     }
 
     word_allowed(guessed_word, result, word) {
@@ -345,6 +378,7 @@ class UI {
         let rendered = Boolean(document.value.ui)
 
         screen_left.style['height'] = `${screen_mid.offsetHeight}px`
+        // Mobile view
         if (document.body.offsetHeight > document.body.offsetWidth) {
             move_element(screen_left, settings_overlay)
             move_element(screen_right, settings_overlay)
@@ -354,12 +388,13 @@ class UI {
             //     document.value.ui.set_stat_visibility(false)
             // else
             //     this.set_stat_visibility(false)
+        // Desktop view
         } else {
             move_element(screen_left, game_screen)
             move_element(screen_mid, game_screen)
             move_element(screen_right, game_screen)
             game_screen.style['grid-template-columns'] = "15% 70% 15%"
-            screen_mid.style.width = `100%`
+            screen_mid.style.width = `100%`     
             // if (rendered)
             //     document.value.ui.set_stat_visibility(true)
             // else
@@ -402,7 +437,8 @@ class UI {
         let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
         let screen_mid = create_and_append('div', game_screen, "game_screen_mid", "game_screen_division")
         let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
-        create_and_append('div', screen_mid, "settings_overlay")
+        let settings_overlay = create_and_append('div', screen_mid, "settings_overlay")
+        create_and_append('div', settings_overlay, "always_in_settings", "game_screen_division")
         create_and_append('div', screen_mid, "message")
         this.add_buttons(screen_mid)
 
@@ -503,16 +539,16 @@ class UI {
         close_settings_btn.setAttribute('onclick', 'document.value.ui.set_stat_visibility(false)')
 
         let inference_label = create_and_append('label', parent)
-        inference_label.innerHTML = 'inference '
         let inference_checkbox = create_and_append('input', inference_label, 'inference_checkbox')
         inference_checkbox.type = "checkbox"
         inference_checkbox.setAttribute('onclick', 'document.value.ui.inference=this.checked; document.value.reset()')
+        inference_label.innerHTML += ' inference'
 
         let hard_mode_label = create_and_append('label', parent)
-        hard_mode_label.innerHTML = 'hard mode '
         let hard_mode_checkbox = create_and_append('input', hard_mode_label, 'hard_mode_checkbox')
         hard_mode_checkbox.type = "checkbox"
         hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')        
+        hard_mode_label.innerHTML += ' hard mode'
 
         // let cheats_label = create_and_append('label', parent)
         // cheats_label.innerHTML = 'cheats '
@@ -524,7 +560,9 @@ class UI {
         create_and_append('div', best_list_div, "best_stat")
         let best_list_table_div = create_and_append('div', best_list_div, null, "word_list_table_div")
         create_and_append('table', best_list_table_div, "best_table")
-        best_list_table_div.setAttribute('data-simplebar', "init")   
+        best_list_table_div.setAttribute('data-simplebar', "init")
+
+        respondToVisibility(best_list_div, document.value.update_stats)
 
         let word_list_div = create_and_append('div', parent, "options_list", "word_list")
         create_and_append('div', word_list_div, "options_stat")
@@ -532,7 +570,7 @@ class UI {
         create_and_append('table', word_list_table_div, "options_table")
         word_list_table_div.setAttribute('data-simplebar', "init")
 
-        let credit = create_and_append('a', parent, null, 'btn')
+        let credit = create_and_append('a', parent, "credit_btn", 'btn')
         credit.innerHTML = "ORIGINAL WORDLE"
         credit.href = 'https://www.powerlanguage.co.uk/wordle/'
         credit.target="_blank"
@@ -795,6 +833,6 @@ let checkExist = setInterval(function() {
     if (WORDS_BY_LANG[language]) {
         console.log("Words loaded!");
         clearInterval(checkExist);
-        new Game(5, 6, language, true, false)
+        new Game(5, 6, language, false, false)
     }
 }, 10); // check every 10ms
