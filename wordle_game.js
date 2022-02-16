@@ -163,7 +163,7 @@ function apply_sigmoid(word_probs) {
 
     let max = Math.max(...Object.values(word_probs))
     let min = Math.min(...Object.values(word_probs))
-    let range = max - min
+    let range = max - min + 1e-8
     for (let [key, prob] of Object.entries(word_probs)) {
         fixed_range_prob = (prob - min)/range * 20 - 10 // Make between -10 and 10
         word_probs[key] = sigmoid( fixed_range_prob )
@@ -173,20 +173,19 @@ function apply_sigmoid(word_probs) {
 
 // Classes
 class Game {
-    constructor(word_len=5, attempts=6, language="wordle", wordle_words=true, hard_mode=false) {
+    constructor(word_len=5, attempts=6, language="wordle", hard_mode=false) {
         document.value = this
 
         this.word_len = word_len
         this.attempts = attempts
         this.language = language
-        this.wordle_words = wordle_words
         this.hard_mode = hard_mode
 
         this.word_probs = WORDS_BY_LANG[language]
         this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         this.allowed_guesses = this.filtered_word_probs
         this.mystery_words = normalize_word_probs(apply_sigmoid(
-            this.get_mystery_words(language, word_len, wordle_words)
+            this.get_mystery_words(language, word_len)
         ))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
@@ -322,11 +321,11 @@ class Game {
         return normalize_word_probs(filtered_word_probs)
     }
 
-    get_mystery_words(language, word_len, wordle_words) {
-        if (language == "wordle" && word_len == 5 && wordle_words) {
+    get_mystery_words(language, word_len) {
+        if (language == "wordle" && word_len == 5) {
             this.mystery_words = {}
-            for (let word of WORDLE_WORDS)
-                this.mystery_words[word] = 1
+            for (let word of WORDLE_WORDS) {
+                this.mystery_words[word] = 1 }
             this.mystery_words = normalize_word_probs(this.mystery_words)
         } else {
             this.mystery_words = {}
@@ -342,9 +341,13 @@ class Game {
     reset(word_len=null, language=null, attempts=null) {
         if (!word_len)
             word_len = this.word_len
-        if (!language)
+        if (!language) {
             language = this.language
-
+        } else if (language == "wordle") {
+            word_len = 5
+            attempts = 6
+        }
+        
         if (this.word_len != word_len || this.language != language) {
             this.word_len = word_len
             this.language = language
@@ -354,7 +357,7 @@ class Game {
 
         this.allowed_guesses = this.filtered_word_probs
         this.mystery_words = normalize_word_probs(apply_sigmoid(
-            this.get_mystery_words(this.language, word_len, this.wordle_words)
+            this.get_mystery_words(this.language, word_len)
         ))
         console.log(Object.entries(this.mystery_words))
         this.mystery_word = multinomial_sample(
@@ -367,7 +370,7 @@ class Game {
 
         this.ui.reset(word_len, this.attempts, this.language)
         setTimeout(() => { 
-            this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}`, 5000)
+            this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}, total mystery words: ${Object.keys(this.mystery_words).length}`, 5000)
         }, 100)
     }
 }
@@ -450,6 +453,7 @@ class UI {
         }
         select.setAttribute("onchange", `let language = this.value;
             load_word_probs(language);
+            document.getElementById("word_len_input").value = 5;
             let checkExist = setInterval(function() {
                 if (WORDS_BY_LANG[language]) {
                     console.log("Words loaded!");
