@@ -108,6 +108,32 @@ function create_switch(parent, label_text, id) {
     return input
 }
 
+function create_incrementer(parent, id, def, title) {
+    div = create_and_append("div", parent, id, "input-group")
+
+    left_div = create_and_append("div", div, null, "input-group-prepend")
+    left_button = create_and_append("button", left_div, null, "btn")
+    left_button.type = "button"
+    left_button.setAttribute("onclick", `let elem = document.getElementById('${id}_input'); if (elem.value > elem.min) {elem.value -= 1; elem.dispatchEvent(new Event("input"))}`)
+    create_and_append("span", left_button, null, "glyphicon glyphicon-minus")
+
+    input = create_and_append("input", div, id+"_input", "form-control")
+    input.type = "number"
+    input.setAttribute("value", def)
+    input.max = 20
+    input.min = 1   
+
+    right_div = create_and_append("div", div, null, "input-group-append")
+    right_button = create_and_append("button", right_div, null, "btn")
+    right_button.type = "button"
+    right_button.setAttribute("onclick", `let elem = document.getElementById('${id}_input'); if (+elem.value < +elem.max) { elem.value = +elem.value + 1; elem.dispatchEvent(new Event("input"))}`)
+    create_and_append("span", right_button, null, "glyphicon glyphicon-plus")
+
+    div.innerHTML += title 
+
+    return input
+}
+
 // Data manipulation
 function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
@@ -288,12 +314,15 @@ class Game {
     reset(word_len=null, language=null, attempts=null) {
         if (!word_len)
             word_len = this.word_len
-        if (language)
-            this.language = language
+        if (!language)
+            language = this.language
 
-        this.word_probs = WORDS_BY_LANG[this.language]
-        if (this.word_len != word_len) {
+        console.log(word_len)
+
+        if (this.word_len != word_len || this.language != language) {
             this.word_len = word_len
+            this.language = language
+            this.word_probs = WORDS_BY_LANG[this.language]
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         }
 
@@ -307,6 +336,9 @@ class Game {
             this.attempts = attempts
 
         this.ui.reset(word_len, this.attempts)
+        setTimeout(() => { 
+            this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}`, 5000)
+        }, 100)
     }
 }
 
@@ -329,7 +361,6 @@ class UI {
         let screen_mid_mid = document.getElementById('game_screen_mid_mid')
         this.init_grid(screen_mid_mid, word_len, attempts)
         this.init_keyboard(document.getElementById('game_screen_mid_bott'))
-        this.display_message("resetting...", 0)
     }
 
     resize() {
@@ -378,8 +409,35 @@ class UI {
         close_settings_btn.innerHTML = "Close Settings"
         close_settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", false)')
 
-        let hard_mode_checkbox = create_switch(parent, "hard mode", "hard_mode_checkbox")
-        hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')        
+        let hard_mode_checkbox = create_switch(parent, " hard mode", "hard_mode_checkbox")
+        hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')
+
+        let select = create_and_append("select", parent, "language_select")
+        for (let lang of ["english", "dutch", "wordle"]) {
+            let option = create_and_append("option", select, lang+"_option")
+            option.innerHTML = lang[0].toUpperCase() + lang.slice(1)
+            option.value = lang
+            option.selected = true
+        }
+        select.setAttribute("onchange", `let language = this.value;
+            load_word_probs(language);
+            let checkExist = setInterval(function() {
+                if (WORDS_BY_LANG[language]) {
+                    console.log("Words loaded!");
+                    clearInterval(checkExist);
+                    document.value.reset(null, language, null); 
+                }
+            }, 10); // check every 10ms`)
+
+        let incrementer = create_incrementer(parent, "word_len", 5, "Word Length")
+        document.getElementById("word_len_input").addEventListener("input", () => {
+            let elem = document.getElementById("word_len_input");
+            let word_len = +elem.value;
+            let game = document.value; if (game.language == "wordle" && word_len != 5) {
+                document.getElementById("english_option").selected = true;
+            }
+            game.reset(word_len, null, null)
+        })
 
         let credit = create_and_append('a', parent, "credit_btn", 'btn')
         credit.innerHTML = "ORIGINAL WORDLE"
@@ -441,7 +499,7 @@ class UI {
                 cell.innerHTML = "&nbsp"
 
                 cell.setAttribute('data-state', 'none')
-                cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
+                // cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
             }
         }
         board.style['grid-template-rows'] = `repeat(${attempts}, minmax(0, 1fr))`
