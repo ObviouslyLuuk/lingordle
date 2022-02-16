@@ -613,6 +613,8 @@ class UI {
             rows[1] += ",&#223"
         }
         let keyboard = create_and_append('div', parent, id="keyboard")
+
+        let keep_lower = ["&#962","&#963","&#223"]
         
         for (let i in rows) {
             let keys = rows[i]
@@ -620,7 +622,12 @@ class UI {
             if (i == 1)
                 row.style.width = "90%"
             for (let key of keys.split(",")) {
-                let btn = create_and_append('div', row, null, "keyboard_btn")
+                let add_class = ''
+                if (keep_lower.includes(key)) {
+                    add_class = 'keep_lower'
+                }
+
+                let btn = create_and_append('div', row, null, "keyboard_btn "+add_class)
                 btn.innerHTML = key
                 btn.id = `${btn.innerHTML}-key` // Set id based on innerHTML for formatting unique chars
                 btn.setAttribute('onclick', `document.value.ui.key_down('${btn.innerHTML}')`)

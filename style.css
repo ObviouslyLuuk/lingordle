@@ -44,6 +44,10 @@
     user-select: none;
 }
 
+.keep_lower {
+  text-transform: lowercase !important;
+}
+
 #game_screen {
     display: grid;
     grid-template-columns: auto auto auto;
