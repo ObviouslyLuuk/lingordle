@@ -114,7 +114,7 @@ function create_incrementer(parent, id, def, title) {
     left_div = create_and_append("div", div, null, "input-group-prepend")
     left_button = create_and_append("button", left_div, null, "btn")
     left_button.type = "button"
-    left_button.setAttribute("onclick", `let elem = document.getElementById('${id}_input'); if (elem.value > elem.min) {elem.value -= 1; elem.dispatchEvent(new Event("input"))}`)
+    left_button.setAttribute("onclick", `let elem = document.getElementById('${id}_input'); if (elem.value > elem.min) {elem.value -= 1; elem.dispatchEvent(new Event("change"))}`)
     create_and_append("span", left_button, null, "glyphicon glyphicon-minus")
 
     input = create_and_append("input", div, id+"_input", "form-control")
@@ -126,7 +126,7 @@ function create_incrementer(parent, id, def, title) {
     right_div = create_and_append("div", div, null, "input-group-append")
     right_button = create_and_append("button", right_div, null, "btn")
     right_button.type = "button"
-    right_button.setAttribute("onclick", `let elem = document.getElementById('${id}_input'); if (+elem.value < +elem.max) { elem.value = +elem.value + 1; elem.dispatchEvent(new Event("input"))}`)
+    right_button.setAttribute("onclick", `let elem = document.getElementById('${id}_input'); if (+elem.value < +elem.max) { elem.value = +elem.value + 1; elem.dispatchEvent(new Event("change"))}`)
     create_and_append("span", right_button, null, "glyphicon glyphicon-plus")
 
     div.innerHTML += title 
@@ -429,7 +429,7 @@ class UI {
             }, 10); // check every 10ms`)
 
         let incrementer = create_incrementer(parent, "word_len", 5, "Word Length")
-        document.getElementById("word_len_input").addEventListener("input", () => {
+        document.getElementById("word_len_input").addEventListener("change", () => {
             let elem = document.getElementById("word_len_input");
             let word_len = +elem.value;
             let game = document.value; if (game.language == "wordle" && word_len != 5) {
