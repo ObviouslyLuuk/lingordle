@@ -142,6 +142,8 @@
   grid-template-columns: auto auto;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  min-height: 40.5%;
 }
 
 #btns_container {

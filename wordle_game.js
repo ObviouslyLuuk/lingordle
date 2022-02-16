@@ -446,12 +446,6 @@ class UI {
             } else {
             game.reset(word_len, null, null) }
         })
-
-        let credit = create_and_append('a', parent, "credit_btn", 'btn')
-        credit.innerHTML = "ORIGINAL WORDLE"
-        credit.href = 'https://www.powerlanguage.co.uk/wordle/'
-        credit.target="_blank"
-        credit.rel="noopener noreferrer"
     }    
 
     init_game_screen() {
