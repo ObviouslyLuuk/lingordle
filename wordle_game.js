@@ -445,7 +445,7 @@ class UI {
         hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')
 
         let select = create_and_append("select", parent, "language_select")
-        for (let lang of ["english", "dutch", "wordle"]) {
+        for (let lang of ["english", "dutch", "greek", "wordle"]) {
             let option = create_and_append("option", select, lang+"_option")
             option.innerHTML = lang[0].toUpperCase() + lang.slice(1)
             option.value = lang
@@ -453,7 +453,7 @@ class UI {
         }
         select.setAttribute("onchange", `let language = this.value;
             load_word_probs(language);
-            document.getElementById("word_len_input").value = 5;
+            if (language == "wordle") { document.getElementById("word_len_input").value = 5 };
             let checkExist = setInterval(function() {
                 if (WORDS_BY_LANG[language]) {
                     console.log("Words loaded!");
