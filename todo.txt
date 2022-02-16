@@ -1,0 +1,1 @@
+let height/width of grid depend on the actual room there is for it

@@ -1,4 +1,10 @@
-const alphabet = "abcdefghijklmnopqrstuvwxyz"
+const alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z', '\u0133',
+'\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', '\u03D1', '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD', '\u03BE', '\u03BF', '\u03C0', '\u03D6', '\u03C1', '\u03C2', '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7', '\u03C8', '\u03C9']
+
+var char_dict = {
+    "&#307": "\u0133",
+}
+
 var keydict = {
     13: "enter",
     8: "backspace",
@@ -28,13 +34,17 @@ function sum_array(array) {
     return sum
 }
 
-function sigmoid(array, constant=0) {
+function sigmoid_elementwise(array, constant=0) {
     new_array = []
     for (let x of array) {
         x = x - constant
-        new_array.push( 1 / (1 + Math.pow(Math.E, -x)) )
+        new_array.push( sigmoid(x) )
     }
-    return new_array
+    return new_array    
+}
+
+function sigmoid(x) {
+    return 1 / (1 + Math.pow(Math.E, -x))
 }
 
 // HTML
@@ -147,6 +157,19 @@ function normalize_word_probs(word_probs) {
     return word_probs
 }
 
+function apply_sigmoid(word_probs) {
+    for (let [key, prob] of Object.entries(word_probs)) {
+        word_probs[key] = Math.log(prob) } // take log to mitigate Zipf's law
+
+    let max = Math.max(...Object.values(word_probs))
+    let min = Math.min(...Object.values(word_probs))
+    let range = max - min
+    for (let [key, prob] of Object.entries(word_probs)) {
+        fixed_range_prob = (prob - min)/range * 20 - 10 // Make between -10 and 10
+        word_probs[key] = sigmoid( fixed_range_prob )
+    }
+    return word_probs
+}
 
 // Classes
 class Game {
@@ -162,12 +185,12 @@ class Game {
         this.word_probs = WORDS_BY_LANG[language]
         this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         this.allowed_guesses = this.filtered_word_probs
-        this.mystery_words = normalize_word_probs(
+        this.mystery_words = normalize_word_probs(apply_sigmoid(
             this.get_mystery_words(language, word_len, wordle_words)
-        )
+        ))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
-            sigmoid(Object.values(this.mystery_words))
+            Object.values(this.mystery_words)
         )
 
         this.ui = new UI(word_len, attempts)
@@ -306,7 +329,12 @@ class Game {
                 this.mystery_words[word] = 1
             this.mystery_words = normalize_word_probs(this.mystery_words)
         } else {
-            this.mystery_words = this.allowed_guesses
+            this.mystery_words = {}
+            // Only add lowercase words
+            for (let [word, count] of Object.entries(this.allowed_guesses)) {
+                if (word[0] == word[0].toLowerCase()) {
+                    this.mystery_words[word] = count }
+            }
         }
         return this.mystery_words
     }
@@ -317,8 +345,6 @@ class Game {
         if (!language)
             language = this.language
 
-        console.log(word_len)
-
         if (this.word_len != word_len || this.language != language) {
             this.word_len = word_len
             this.language = language
@@ -327,15 +353,19 @@ class Game {
         }
 
         this.allowed_guesses = this.filtered_word_probs
-        this.mystery_words = this.get_mystery_words(this.language, word_len, this.wordle_words)
+        this.mystery_words = normalize_word_probs(apply_sigmoid(
+            this.get_mystery_words(this.language, word_len, this.wordle_words)
+        ))
+        console.log(Object.entries(this.mystery_words))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
             Object.values(this.mystery_words)
         )
+
         if (attempts)
             this.attempts = attempts
 
-        this.ui.reset(word_len, this.attempts)
+        this.ui.reset(word_len, this.attempts, this.language)
         setTimeout(() => { 
             this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}`, 5000)
         }, 100)
@@ -357,11 +387,11 @@ class UI {
         this.resize()
     }
 
-    reset(word_len, attempts) {
+    reset(word_len, attempts, lang) {
         let screen_mid_mid = document.getElementById('game_screen_mid_mid')
         this.resize()
         this.init_grid(screen_mid_mid, word_len, attempts)
-        this.init_keyboard(document.getElementById('game_screen_mid_bott'))
+        this.init_keyboard(document.getElementById('game_screen_mid_bott'), lang)
     }
 
     resize() {
@@ -431,8 +461,12 @@ class UI {
         let incrementer = create_incrementer(parent, "word_len", 5, "Word Length")
         document.getElementById("word_len_input").addEventListener("change", () => {
             let elem = document.getElementById("word_len_input");
+            let game = document.value; 
             let word_len = +elem.value;
-            let game = document.value; if (game.language == "wordle" && word_len != 5) {
+            if (game.word_len == word_len) {
+                return
+            }
+            if (game.language == "wordle" && word_len != 5) {
                 let language = "english"
                 document.getElementById(language+"_option").selected = true;
                 load_word_probs(language)
@@ -521,7 +555,7 @@ class UI {
         cell.setAttribute('data-state', state)
         if (!this.inference && alphabet.includes(cell.innerHTML)) {
             let key = document.getElementById(`${cell.innerHTML}-key`)
-            if (key.dataset.state != "correct")
+            if (key.getAttribute("data-state") != "correct")
                 key.setAttribute('data-state', state)            
         }
     }
@@ -534,7 +568,7 @@ class UI {
         new_row.setAttribute('class', 'board_row current_row')        
     }
 
-    init_keyboard(parent) {
+    init_keyboard(parent, lang="english") {
         let old_keyboard = document.getElementById('keyboard')
         if (old_keyboard)
             old_keyboard.parentElement.removeChild(old_keyboard)
@@ -542,6 +576,13 @@ class UI {
         let rows = ["q,w,e,r,t,y,u,i,o,p", 
                     "a,s,d,f,g,h,j,k,l", 
                 "enter,z,x,c,v,b,n,m,backspace"]
+        if (lang == "greek") {
+            rows = ["&#962,&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960",
+            "&#945,&#963,&#948,&#966,&#947,&#951,&#958,&#954,&#955",
+            "enter,&#950,&#967,&#968,&#969,&#946,&#957,&#956,backspace"]
+        } else if (lang == "dutch") {
+            rows[1] += ",&#307"
+        }
         let keyboard = create_and_append('div', parent, id="keyboard")
         
         for (let i in rows) {
@@ -550,8 +591,9 @@ class UI {
             if (i == 1)
                 row.style.width = "90%"
             for (let key of keys.split(",")) {
-                let btn = create_and_append('div', row, `${key}-key`, "keyboard_btn")
+                let btn = create_and_append('div', row, null, "keyboard_btn")
                 btn.innerHTML = key
+                btn.id = `${btn.innerHTML}-key` // Set id based on innerHTML for formatting unique chars
                 btn.setAttribute('onclick', `document.value.ui.key_down('${btn.innerHTML}')`)
                 btn.setAttribute('data-state', 'none')
             }
@@ -559,6 +601,7 @@ class UI {
     }
 
     enter_letter(letter) {
+        console.log(letter)
         let cell = this.current_cell
         cell.innerHTML = letter
         if (cell.nextElementSibling != null)
@@ -626,9 +669,9 @@ class UI {
 
         let result = []
         for (let cell of row.children) {
-            if (cell.dataset.state == 'none')
+            if (cell.getAttribute('data-state') == 'none')
                 this.set_cell_state(cell, 'absent')
-            result.push(cell.dataset.state)
+            result.push(cell.getAttribute('data-state'))
             cell = cell.previousElementSibling
         }      
         return result
