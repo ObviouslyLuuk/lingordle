@@ -1,5 +1,7 @@
-const alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z', '\u0133',
-'\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', '\u03D1', '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD', '\u03BE', '\u03BF', '\u03C0', '\u03D6', '\u03C1', '\u03C2', '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7', '\u03C8', '\u03C9']
+const latin_alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+const greek_alphabet = ['\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', '\u03D1', '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD', '\u03BE', '\u03BF', '\u03C0', '\u03D6', '\u03C1', '\u03C2', '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7', '\u03C8', '\u03C9']
+
+var alphabet = latin_alphabet
 
 var char_dict = {
     "&#307": "\u0133",
@@ -445,7 +447,10 @@ class UI {
         hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')
 
         let select = create_and_append("select", parent, "language_select")
-        for (let lang of ["english", "dutch", "greek", "wordle"]) {
+        let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek"]
+        languages.sort()
+        languages.push("wordle")
+        for (let lang of languages) {
             let option = create_and_append("option", select, lang+"_option")
             option.innerHTML = lang[0].toUpperCase() + lang.slice(1)
             option.value = lang
@@ -577,6 +582,8 @@ class UI {
         if (old_keyboard)
             old_keyboard.parentElement.removeChild(old_keyboard)
 
+        alphabet = []
+
         let rows = ["q,w,e,r,t,y,u,i,o,p", 
                     "a,s,d,f,g,h,j,k,l", 
                 "enter,z,x,c,v,b,n,m,backspace"]
@@ -586,6 +593,10 @@ class UI {
             "enter,&#950,&#967,&#968,&#969,&#946,&#957,&#956,backspace"]
         } else if (lang == "dutch") {
             rows[1] += ",&#307"
+        } else if (lang == "french") {
+            rows[1] += ",&#230,&#339"
+        } else if (lang == "german") {
+            rows[1] += ",&#223"
         }
         let keyboard = create_and_append('div', parent, id="keyboard")
         
@@ -600,6 +611,10 @@ class UI {
                 btn.id = `${btn.innerHTML}-key` // Set id based on innerHTML for formatting unique chars
                 btn.setAttribute('onclick', `document.value.ui.key_down('${btn.innerHTML}')`)
                 btn.setAttribute('data-state', 'none')
+
+                if (!["enter", "backspace"].includes(key)) {
+                    alphabet.push(btn.innerHTML)
+                }
             }
         }
     }

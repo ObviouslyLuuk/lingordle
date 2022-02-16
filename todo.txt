@@ -1,3 +1,4 @@
 let height/width of grid depend on the actual room there is for it
 add word inclusion threshold for easier games
 add mode where words from different languages can be picked
+add load spinner
