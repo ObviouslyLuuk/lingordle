@@ -359,6 +359,7 @@ class UI {
 
     reset(word_len, attempts) {
         let screen_mid_mid = document.getElementById('game_screen_mid_mid')
+        this.resize()
         this.init_grid(screen_mid_mid, word_len, attempts)
         this.init_keyboard(document.getElementById('game_screen_mid_bott'))
     }
@@ -380,7 +381,6 @@ class UI {
         if (document.body.offsetHeight > document.body.offsetWidth) {
             move_element(screen_left, settings_overlay)
             move_element(screen_right, settings_overlay)
-            move_element(settings_btn, screen_mid_left)
             game_screen.style['grid-template-columns'] = "auto"
             screen_mid.style.width = `${document.body.offsetWidth*.95}px`
         // Desktop view
@@ -388,7 +388,6 @@ class UI {
             move_element(screen_left, game_screen)
             move_element(screen_mid, game_screen)
             move_element(screen_right, game_screen)
-            move_element(settings_btn, screen_mid_right)
             game_screen.style['grid-template-columns'] = "auto auto auto"
             screen_mid.style.width = `100%`   
         }
