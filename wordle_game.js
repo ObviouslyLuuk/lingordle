@@ -80,6 +80,8 @@ function set_visibility(element_id, vis) {
 }
 
 function load_word_probs(language) {
+    set_loader()
+
     let id = `${language}_words`
     let script = document.getElementById(id)
     if (!script) {
@@ -144,6 +146,16 @@ function create_incrementer(parent, id, def, title) {
     div.innerHTML += title 
 
     return input
+}
+
+function set_loader(display="block") {
+    loader = document.getElementById("loader_div")
+    
+    if (loader) {
+        loader.style.display = display
+        loader.style.left = `${document.body.offsetWidth / 2 - loader.offsetWidth / 2}px`
+        loader.style.top = `${document.body.offsetHeight / 2 - loader.offsetHeight / 2}px`
+    }
 }
 
 // Data manipulation
@@ -397,6 +409,7 @@ class UI {
         this.resize()
         this.init_grid(screen_mid_mid, word_len, attempts)
         this.init_keyboard(document.getElementById('game_screen_mid_bott'), lang)
+        set_loader("none")
     }
 
     resize() {
@@ -502,6 +515,7 @@ class UI {
         let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
         let settings_overlay = create_and_append('div', screen_mid, "settings_overlay")
         let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
+        create_and_append('div', document.body, "loader_div", "loader")
 
         let message = create_and_append('div', screen_mid_bott, "message")
         message.innerHTML = "&nbsp"
