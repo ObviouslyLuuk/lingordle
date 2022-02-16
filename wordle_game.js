@@ -489,14 +489,22 @@ class UI {
             old_board.parentElement.removeChild(old_board)
 
         let board = create_and_append('div', parent, id='board')
-        let reference = Math.min(document.body.offsetHeight *.4, document.body.offsetWidth *.75)
-        let grid_gap = reference / 100
+        let grid_gap = Math.min(document.body.offsetHeight, document.body.offsetWidth) / 100
         let inter_column_gaps = (word_len-1)*grid_gap
         let inter_row_gaps = (attempts-1)*grid_gap
         board.style["grid-gap"] = `${grid_gap}px`
-        board.style['width'] = `${reference}px`
-        // board.style['width'] = `${(board.offsetHeight-inter_row_gaps)/attempts*word_len+inter_column_gaps}px`
-        board.style['height'] = `${(board.offsetWidth-inter_column_gaps)/word_len*attempts+inter_row_gaps}px`
+
+        let reference = Math.min(document.body.offsetHeight *.4, document.body.offsetWidth *.75)
+
+        let mobile_view = document.body.offsetHeight > document.body.offsetWidth
+
+        if (word_len > attempts && mobile_view) {
+            board.style['width'] = `${reference}px`
+            board.style['height'] = `${(board.offsetWidth-inter_column_gaps)/word_len*attempts+inter_row_gaps}px`
+        } else {
+            board.style['height'] = `${reference}px`
+            board.style['width'] = `${(board.offsetHeight-inter_row_gaps)/attempts*word_len+inter_column_gaps}px`
+        }
 
         for (let row = 0; row < attempts; row++) {
             let row = create_and_append('div', board, null, "board_row")
