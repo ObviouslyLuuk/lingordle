@@ -207,12 +207,20 @@ class Game {
         for (let i in guessed_word) {
             let c = guessed_word[i]
             let c_true = mystery_word[i]
-            if (c == c_true)
+            if (c == c_true) {
                 result.push("correct")
-            else if (mystery_word.includes(c))
-                result.push("present")
+                mystery_word = mystery_word.replace(c, '-')
+            }
             else
                 result.push("absent")
+        }
+        // Second round to make sure corrects aren't counted as presents beforehand
+        for (let i in guessed_word) {
+            let c = guessed_word[i]
+            if (mystery_word.includes(c) && result[i] != "correct") {
+                result[i] = "present"
+                mystery_word = mystery_word.replace(c, '-')
+            }
         }
         return result
     }
