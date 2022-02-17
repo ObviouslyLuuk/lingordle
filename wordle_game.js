@@ -3,10 +3,6 @@ const greek_alphabet = ['\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B
 
 var alphabet = latin_alphabet
 
-var char_dict = {
-    "&#307": "\u0133",
-}
-
 var keydict = {
     13: "enter",
     8: "backspace",
@@ -86,7 +82,7 @@ function load_word_probs(language) {
     let script = document.getElementById(id)
     if (!script) {
         script = create_and_append('script', document.body, id)
-        script.src = `word_probs_${language}.js`
+        script.src = `words/word_probs_${language}.js`
         script.type = "text/javascript"
     }
     return id
@@ -150,12 +146,13 @@ function create_incrementer(parent, id, def, title) {
 
 function set_loader(display="block") {
     loader = document.getElementById("loader_div")
-    
-    if (loader) {
-        loader.style.display = display
-        loader.style.left = `${document.body.offsetWidth / 2 - loader.offsetWidth / 2}px`
-        loader.style.top = `${document.body.offsetHeight / 2 - loader.offsetHeight / 2}px`
+    if (!loader) {
+        return
     }
+    
+    loader.style.display = display
+    loader.style.left = `${document.body.offsetWidth / 2 - loader.offsetWidth / 2}px`
+    loader.style.top = `${document.body.offsetHeight / 2 - loader.offsetHeight / 2}px`
 }
 
 // Data manipulation
@@ -207,6 +204,7 @@ class Game {
         )
 
         this.ui = new UI(word_len, attempts)
+        this.ui.resize(this.ui)
     }
 
     step() {
@@ -353,6 +351,7 @@ class Game {
     }
 
     reset(word_len=null, language=null, attempts=null) {
+        set_loader()
         if (!word_len)
             word_len = this.word_len
         if (!language) {
@@ -400,29 +399,25 @@ class UI {
 
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {document.value.ui.key_down(keydict[event.keyCode])})
-
-        this.resize()
     }
 
     reset(word_len, attempts, lang) {
         let screen_mid_mid = document.getElementById('game_screen_mid_mid')
-        this.resize()
+
         this.init_grid(screen_mid_mid, word_len, attempts)
         this.init_keyboard(document.getElementById('game_screen_mid_bott'), lang)
-        set_loader("none")
+        this.resize()
+        set_loader("none")      
     }
 
-    resize() {
+    resize(ui=null) {
         let game_screen = document.getElementById('game_screen')
         let screen_left = document.getElementById('game_screen_left')
         let screen_mid = document.getElementById('game_screen_mid')
-        let screen_mid_left = document.getElementById('game_screen_mid_left')
-        let screen_mid_mid = document.getElementById('game_screen_mid_mid')
-        let screen_mid_right = document.getElementById('game_screen_mid_right')
         let screen_right = document.getElementById('game_screen_right')
         let settings_overlay = document.getElementById('settings_overlay')
 
-        let settings_btn = document.getElementById("settings_btn")
+        let keyboard_width = Math.min(document.body.offsetWidth*.95 - (screen_left.offsetWidth + screen_right.offsetWidth), 800)
 
         screen_left.style['height'] = `${screen_mid.offsetHeight}px`
         // Mobile view
@@ -437,8 +432,12 @@ class UI {
             move_element(screen_mid, game_screen)
             move_element(screen_right, game_screen)
             game_screen.style['grid-template-columns'] = "auto auto auto"
-            screen_mid.style.width = `100%`   
+            screen_mid.style.width = `100%`
         }
+
+        if (!ui && document.value) {ui = document.value.ui}
+        if (ui) {
+            document.value.ui.init_keyboard(document.getElementById('game_screen_mid_bott'), null, keyboard_width) }
     }
 
     key_down(key) {
@@ -591,7 +590,11 @@ class UI {
         new_row.setAttribute('class', 'board_row current_row')        
     }
 
-    init_keyboard(parent, lang="english") {
+    init_keyboard(parent, lang=null, width=null) {
+        if (!lang) {
+            lang = document.value.language
+        }
+
         let old_keyboard = document.getElementById('keyboard')
         if (old_keyboard)
             old_keyboard.parentElement.removeChild(old_keyboard)
@@ -637,6 +640,10 @@ class UI {
                     alphabet.push(btn.innerHTML)
                 }
             }
+        }
+
+        if (width) {
+            keyboard.style.width = `${width}px`
         }
     }
 
