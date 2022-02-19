@@ -2,5 +2,5 @@ let height/width of grid depend on the actual room there is for it
 add word inclusion threshold for easier games
 add mode where words from different languages can be picked
 
-make words with accents not be the mystery word
+include accent words for Dutch (without using them as mystery word)
 read language and word length (and seed?) from URL

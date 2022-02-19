@@ -3,6 +3,38 @@ const greek_alphabet = ['\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B
 
 var alphabet = latin_alphabet
 
+accent_dict = {
+    '\xe0': 'a',
+    '\xe1': 'a',
+    '\xe2': 'a',
+    '\xe4': 'a',
+    '\xe5': 'a',
+    '\xe3': 'a',
+    '\xe7': 'c',
+    '\xe8': 'e',
+    '\xe9': 'e',
+    '\xea': 'e',
+    '\xeb': 'e',
+    '\xec': 'i',
+    '\xed': 'i',
+    '\xee': 'i',
+    '\xef': 'i',
+    '\xf1': 'n',
+    '\u0144': 'n',
+    '\xf2': 'o',
+    '\xf3': 'o',
+    '\xf4': 'o',
+    '\xf6': 'o',
+    '\xf9': 'u',
+    '\xfa': 'u',
+    '\xfb': 'u',
+    '\xfc': 'u',
+    '\u015b': 's',
+}
+for (let [k, v] of Object.entries(accent_dict)) {
+    accent_dict[k.toUpperCase()] = v.toUpperCase()
+}
+
 var keydict = {
     13: "enter",
     8: "backspace",
@@ -182,6 +214,18 @@ function apply_sigmoid(word_probs) {
     return word_probs
 }
 
+function remove_accents(word) {
+    new_word = ''
+    for (let i in word) {
+        if (Object.keys(accent_dict).includes(word[i])) {
+            new_word += accent_dict[word[i]]
+        } else {
+            new_word += word[i]
+        }
+    }
+    return new_word
+}
+
 // Classes
 class Game {
     constructor(word_len=5, attempts=6, language="wordle", hard_mode=false) {
@@ -300,9 +344,17 @@ class Game {
         if (!guessed_word)
             return false
 
-        if (check_vocab && !Object.keys(this.allowed_guesses).includes(guessed_word)) {
-            this.ui.display_message(guessed_word+" isn't a valid guess")
-            return false
+        if (check_vocab) {
+            let allowed = false
+            for (let allowed_guess of Object.keys(this.allowed_guesses)) {
+                console.log(remove_accents(allowed_guess))
+                if (guessed_word == remove_accents(allowed_guess)) {
+                    allowed = true }
+            }
+            if (!allowed) {
+                this.ui.display_message(guessed_word+" isn't a valid guess")
+                return false
+            }
         }
         return guessed_word
     }
@@ -341,9 +393,9 @@ class Game {
             this.mystery_words = normalize_word_probs(this.mystery_words)
         } else {
             this.mystery_words = {}
-            // Only add lowercase words
+            // Only add lowercase words without accents
             for (let [word, count] of Object.entries(this.allowed_guesses)) {
-                if (word[0] == word[0].toLowerCase()) {
+                if (word[0] == word[0].toLowerCase() && word == remove_accents(word)) {
                     this.mystery_words[word] = count }
             }
         }
