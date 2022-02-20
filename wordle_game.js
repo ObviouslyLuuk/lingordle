@@ -450,21 +450,21 @@ class Game {
             attempts = 6
         }
 
-        if (attempts) {
-            this.attempts = attempts }
-        if (hard_mode != null) {
-            this.hard_mode = hard_mode }
-        if (seed != null) {
-            this.seed = seed }          
-        
         if (this.word_len != word_len || this.language != language) {
             this.word_len = word_len
             this.language = language
             this.word_probs = WORDS_BY_LANG[this.language]
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
-        } else if (!seed) {
+        } else {
             this.seed = Math.random()*1000 }
 
+        if (attempts) {
+            this.attempts = attempts }
+        if (hard_mode != null) {
+            this.hard_mode = hard_mode }
+        if (seed != null) {
+            this.seed = seed }
+        
         this.allowed_guesses = this.filtered_word_probs
         this.mystery_words = normalize_word_probs(apply_sigmoid(
             this.get_mystery_words(this.language, word_len)
@@ -493,7 +493,7 @@ class Game {
         let new_url = get_share_link((seed != null))
         window.history.pushState(null, document.title, new_url.pathname+new_url.search)
 
-        console.log("NEW ROUND")
+        console.log("\nNEW ROUND")
         console.log("language: ", this.language)
         console.log("word length: ", this.word_len)
         console.log("attempts: ", this.attempts)
@@ -507,8 +507,9 @@ class UI {
     constructor(word_len, attempts) {
         this.current_cell = null
 
-        let settings_div = this.init_game_screen()
+        let {settings_div, help_overlay} = this.init_game_screen()
         this.init_settings(settings_div)
+        this.init_help(help_overlay)
         this.reset(word_len, attempts)
 
         window.addEventListener('resize', this.resize)
@@ -526,26 +527,26 @@ class UI {
 
     resize(ui=null) {
         let game_screen = document.getElementById('game_screen')
-        let screen_left = document.getElementById('game_screen_left')
+        // let screen_left = document.getElementById('game_screen_left')
         let screen_mid = document.getElementById('game_screen_mid')
-        let screen_right = document.getElementById('game_screen_right')
+        // let screen_right = document.getElementById('game_screen_right')
         let settings_overlay = document.getElementById('settings_overlay')
 
         let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
 
-        screen_left.style['height'] = `${screen_mid.offsetHeight}px`
+        // screen_left.style['height'] = `${screen_mid.offsetHeight}px`
         // Mobile view
         if (document.body.offsetHeight > document.body.offsetWidth) {
-            move_element(screen_left, settings_overlay)
-            move_element(screen_right, settings_overlay)
+            // move_element(screen_left, settings_overlay)
+            // move_element(screen_right, settings_overlay)
             game_screen.style['grid-template-columns'] = "auto"
             screen_mid.style.width = `${document.body.offsetWidth*.95}px`
         // Desktop view
         } else {
-            move_element(screen_left, game_screen)
-            move_element(screen_mid, game_screen)
-            move_element(screen_right, game_screen)
-            game_screen.style['grid-template-columns'] = "auto auto auto"
+            // move_element(screen_left, game_screen)
+            // move_element(screen_mid, game_screen)
+            // move_element(screen_right, game_screen)
+            // game_screen.style['grid-template-columns'] = "auto auto auto"
             screen_mid.style.width = `100%`
         }
 
@@ -621,17 +622,81 @@ class UI {
         word_otd_btn.setAttribute('onclick', 'document.value.reset(null, null, null, null, get_date_string())')
     }
 
+    init_help(parent) {
+        let close_help_btn = create_and_append('div', parent, 'close_help_btn', 'butn close_btn')
+        create_and_append("span", close_help_btn, null, "glyphicon glyphicon-remove")        
+        close_help_btn.setAttribute('onclick', 'set_visibility("help_overlay", false)')
+
+        for (let text of [
+            'Guess the LINGORDLE in six tries.',
+            'Each guess must be a valid word. Hit the enter button to submit.',
+            'After each guess, the color of the tiles will change to show how close your guess was to the word.<br>',
+        ]) {
+            let p = create_and_append("p", parent, null, null)
+            p.innerHTML = text
+        }
+
+        let cell_width = 50
+
+        let word = "sheep"
+        let board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
+        board.style.margin = "5px"
+        let row = board.firstChild
+        for (let i in word) {
+            let cell = row.children[i]
+            cell.innerHTML = word[i]
+        }
+        this.color_row(row, ["correct", "absent", "present", "absent", "absent"], false)
+
+        for (let text of [
+            'The letter <b>S</b> is in the correct spot.',
+            'The letter <b>E</b> is in the answer, but only once, and in a different location.',
+            'The letters <b>H</b> and <b>P</b> do not occur in the answer.',
+        ]) {
+            let p = create_and_append("p", parent, null, null)
+            p.innerHTML = text
+        }
+
+        word = "sauce"
+        board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
+        board.style.margin = "5px"
+        row = board.firstChild
+        for (let i in word) {
+            let cell = row.children[i]
+            cell.innerHTML = word[i]
+        }
+        this.color_row(row, Array(word.length).fill("correct"), false)
+
+        for (let text of [
+            '<br>You can change the language and word length in the settings <span class="glyphicon glyphicon-cog"></span>.',
+        ]) {
+            let p = create_and_append("p", parent, null, null)
+            p.innerHTML = text
+        }
+
+        word = "amigos"
+        board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
+        board.style.margin = "5px"
+        row = board.firstChild
+        for (let i in word) {
+            let cell = row.children[i]
+            cell.innerHTML = word[i]
+        }
+        this.color_row(row, Array(word.length).fill("correct"), false) 
+    }
+
     init_game_screen() {
         let game_screen = create_and_append('div', null, "game_screen")
-        let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
+        // let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
         let screen_mid = create_and_append('div', game_screen, "game_screen_mid", "game_screen_division")
         let screen_mid_left = create_and_append('div', screen_mid, "game_screen_mid_left")
         let screen_mid_mid = create_and_append('div', screen_mid, "game_screen_mid_mid")
         let screen_mid_right = create_and_append('div', screen_mid, "game_screen_mid_right")
         let screen_mid_bott = create_and_append('div', screen_mid, "game_screen_mid_bott")
-        let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
-        let settings_overlay = create_and_append('div', screen_mid, "settings_overlay")
+        // let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
+        let settings_overlay = create_and_append('div', screen_mid, "settings_overlay", "overlay")
         let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
+        let help_overlay = create_and_append('div', screen_mid, "help_overlay", "overlay")
         create_and_append('div', document.body, "loader_div", "loader")
 
         let message = create_and_append('div', screen_mid_bott, "message")
@@ -639,16 +704,18 @@ class UI {
 
         // Add main buttons
         let reset_btn = create_and_append('div', screen_mid_left, 'reset_btn', 'butn')
-        // reset_btn.innerHTML = "Play Again"
         create_and_append("span", reset_btn, null, "glyphicon glyphicon-repeat")        
         reset_btn.setAttribute('onclick', 'document.value.reset()')
 
+        let help_btn = create_and_append('div', screen_mid_right, 'help_btn', 'butn')
+        create_and_append("span", help_btn, null, "glyphicon glyphicon-question-sign")
+        help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
+
         let settings_btn = create_and_append('div', screen_mid_right, 'settings_btn', 'butn')
-        // settings_btn.innerHTML = "Settings"
         create_and_append("span", settings_btn, null, "glyphicon glyphicon-cog")
         settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", true)')
 
-        return settings_div
+        return { settings_div, help_overlay }
     }
 
     init_grid(parent, word_len, attempts) {
@@ -656,21 +723,34 @@ class UI {
         if (old_board)
             old_board.parentElement.removeChild(old_board)
 
-        let board = create_and_append('div', parent, id='board')
         let grid_gap = Math.min(document.body.offsetHeight, document.body.offsetWidth) / 100
-        let inter_column_gaps = (word_len-1)*grid_gap
-        let inter_row_gaps = (attempts-1)*grid_gap
-        board.style["grid-gap"] = `${grid_gap}px`
 
         let reference = Math.min(document.body.offsetHeight, document.body.offsetWidth)
         let mobile_view = document.body.offsetHeight > document.body.offsetWidth
 
+        let height, width
         if (word_len > attempts && mobile_view) {
-            board.style['width'] = `${reference*.75}px`
-            board.style['height'] = `${(board.offsetWidth-inter_column_gaps)/word_len*attempts+inter_row_gaps}px`
-        } else {
-            board.style['height'] = `${reference*.6}px`
-            board.style['width'] = `${(board.offsetHeight-inter_row_gaps)/attempts*word_len+inter_column_gaps}px`
+            width = reference*.75 } 
+        else {
+            height = reference*.5 }
+
+        let board = this.build_grid(parent, "board", word_len, attempts, grid_gap, height, width)
+
+        this.set_current_row(board.firstChild)
+    }
+
+    build_grid(parent, id, word_len, attempts, grid_gap, height=null, width=null) {
+        let board = create_and_append('div', parent, id=id, "board")
+        board.style["grid-gap"] = `${grid_gap}px`
+        let inter_column_gaps = (word_len-1)*grid_gap
+        let inter_row_gaps = (attempts-1)*grid_gap        
+
+        if (height) {
+            board.style['height'] = `${height}px`
+            board.style['width'] = `${(height-inter_row_gaps)/attempts*word_len+inter_column_gaps}px`
+        } else if (width) {
+            board.style['width'] = `${width}px`
+            board.style['height'] = `${(width-inter_column_gaps)/word_len*attempts+inter_row_gaps}px`
         }
 
         for (let row = 0; row < attempts; row++) {
@@ -688,12 +768,12 @@ class UI {
         }
         board.style['grid-template-rows'] = `repeat(${attempts}, minmax(0, 1fr))`
 
-        this.set_current_row(board.firstChild)
+        return board
     }
 
-    set_cell_state(cell, state) {
+    set_cell_state(cell, state, change_keys) {
         cell.setAttribute('data-state', state)
-        if (!this.inference && alphabet.includes(cell.innerHTML)) {
+        if (change_keys && !this.inference && alphabet.includes(cell.innerHTML)) {
             let key = document.getElementById(`${cell.innerHTML}-key`)
             if (key.getAttribute("data-state") != "correct")
                 key.setAttribute('data-state', state)            
@@ -793,10 +873,10 @@ class UI {
         this.current_cell = prev_cell
     }
 
-    color_row(row, result) {
+    color_row(row, result, change_keys=true) {
         let cell = row.firstChild
         for (let r of result) {
-            this.set_cell_state(cell, r)
+            this.set_cell_state(cell, r, change_keys)
             cell = cell.nextElementSibling
         }
     }
