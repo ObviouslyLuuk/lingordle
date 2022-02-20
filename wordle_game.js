@@ -340,6 +340,9 @@ class Game {
     }
 
     evaluate_word(mystery_word, guessed_word) {
+        if (this.language == "greek") {
+            mystery_word = remove_accents(mystery_word) }
+
         let result = []
         for (let i in guessed_word) {
             let c = guessed_word[i]
@@ -368,7 +371,7 @@ class Game {
     }
     
     lose_fn() {
-        this.ui.display_message("You lose.\nThe answer was "+this.mystery_word, 3600000)
+        this.ui.display_message("You lose.\nThe answer was "+this.mystery_word.toUpperCase(), 3600000)
         this.ui.current_cell = null
     }
 
@@ -384,7 +387,7 @@ class Game {
                     allowed = true }
             }
             if (!allowed) {
-                this.ui.display_message(guessed_word+" isn't a valid guess")
+                this.ui.display_message(guessed_word.toUpperCase()+" isn't a valid guess")
                 return false
             }
         }
