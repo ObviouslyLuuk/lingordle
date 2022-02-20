@@ -278,24 +278,6 @@ class Game {
     constructor(word_len=5, attempts=6, language="wordle", hard_mode=false, seed=null) {
         document.value = this
 
-        // this.word_len = word_len
-        // this.attempts = attempts
-        // this.language = language
-        // this.hard_mode = hard_mode
-        // this.seed = seed
-
-        // this.word_probs = WORDS_BY_LANG[language]
-        // this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
-        // this.allowed_guesses = this.filtered_word_probs
-        // this.mystery_words = normalize_word_probs(apply_sigmoid(
-        //     this.get_mystery_words(language, word_len)
-        // ))
-        // this.mystery_word = multinomial_sample(
-        //     Object.keys(this.mystery_words), 
-        //     Object.values(this.mystery_words),
-        //     this.seed
-        // )
-
         this.ui = new UI(word_len, attempts)
         this.ui.resize(this.ui)
 
@@ -863,25 +845,21 @@ let language = "wordle"
 if (urlParams.has("lang")) {
     language = urlParams.get("lang")
 }
-console.log("language: ", language)
 
 let word_len = 5
 if (urlParams.has("word_len")) {
     word_len = urlParams.get("word_len")
 }
-console.log("word length: ", word_len)
 
 let attempts = 6
 if (urlParams.has("attempts")) {
     attempts = urlParams.get("attempts")
 }
-console.log("attempts: ", attempts)
 
 let seed = get_date_string()
 if (urlParams.has("seed")) {
     seed = urlParams.get("seed")
 }
-console.log("seed: ", seed)
 
 let id = load_word_probs(language)
 let checkExist = setInterval(function() {
