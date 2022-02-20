@@ -498,7 +498,7 @@ class UI {
         let screen_right = document.getElementById('game_screen_right')
         let settings_overlay = document.getElementById('settings_overlay')
 
-        let keyboard_width = Math.min(document.body.offsetWidth*.95 - (screen_left.offsetWidth + screen_right.offsetWidth), 800)
+        let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
 
         screen_left.style['height'] = `${screen_mid.offsetHeight}px`
         // Mobile view
