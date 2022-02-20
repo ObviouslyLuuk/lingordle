@@ -51,6 +51,7 @@ accent_dict = {
     '\u0390': '\u03b9',
     '\u03ac': '\u03b1',
     '\u03ce': '\u03c9',
+    '\u03c2': '\u03c3',
 }
 for (let [k, v] of Object.entries(accent_dict)) {
     accent_dict[k.toUpperCase()] = v.toUpperCase()
@@ -277,26 +278,28 @@ class Game {
     constructor(word_len=5, attempts=6, language="wordle", hard_mode=false, seed=null) {
         document.value = this
 
-        this.word_len = word_len
-        this.attempts = attempts
-        this.language = language
-        this.hard_mode = hard_mode
-        this.seed = seed
+        // this.word_len = word_len
+        // this.attempts = attempts
+        // this.language = language
+        // this.hard_mode = hard_mode
+        // this.seed = seed
 
-        this.word_probs = WORDS_BY_LANG[language]
-        this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
-        this.allowed_guesses = this.filtered_word_probs
-        this.mystery_words = normalize_word_probs(apply_sigmoid(
-            this.get_mystery_words(language, word_len)
-        ))
-        this.mystery_word = multinomial_sample(
-            Object.keys(this.mystery_words), 
-            Object.values(this.mystery_words),
-            this.seed
-        )
+        // this.word_probs = WORDS_BY_LANG[language]
+        // this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
+        // this.allowed_guesses = this.filtered_word_probs
+        // this.mystery_words = normalize_word_probs(apply_sigmoid(
+        //     this.get_mystery_words(language, word_len)
+        // ))
+        // this.mystery_word = multinomial_sample(
+        //     Object.keys(this.mystery_words), 
+        //     Object.values(this.mystery_words),
+        //     this.seed
+        // )
 
         this.ui = new UI(word_len, attempts)
         this.ui.resize(this.ui)
+
+        this.reset(word_len, language, attempts, hard_mode, seed)
     }
 
     step() {
@@ -449,7 +452,7 @@ class Game {
         return this.mystery_words
     }
 
-    reset(word_len=null, language=null, attempts=null) {
+    reset(word_len=null, language=null, attempts=null, hard_mode=null, seed=null) {
         set_loader()
         if (!word_len)
             word_len = this.word_len
@@ -459,14 +462,21 @@ class Game {
             word_len = 5
             attempts = 6
         }
+
+        if (attempts) {
+            this.attempts = attempts }
+        if (hard_mode) {
+            this.hard_mode = hard_mode }
+        if (seed) {
+            this.seed = seed }          
         
         if (this.word_len != word_len || this.language != language) {
             this.word_len = word_len
             this.language = language
             this.word_probs = WORDS_BY_LANG[this.language]
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
-        } else {
-            this.seed = Math.random()*100 }
+        } else if (!seed) {
+            this.seed = Math.random()*1000 }
 
         this.allowed_guesses = this.filtered_word_probs
         this.mystery_words = normalize_word_probs(apply_sigmoid(
@@ -476,11 +486,9 @@ class Game {
         // console.log("allowed guesses: ", Object.keys(this.allowed_guesses))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
-            Object.values(this.mystery_words)
-        )
-
-        if (attempts)
-            this.attempts = attempts
+            Object.values(this.mystery_words),
+            this.seed
+        )          
 
         this.ui.reset(word_len, this.attempts, this.language)
         setTimeout(() => { 
@@ -490,6 +498,10 @@ class Game {
         document.getElementById("word_len_input").value = this.word_len
         document.getElementById(this.language+"_option").selected = true
         document.getElementById("hard_mode_checkbox_input").checked = this.hard_mode
+        if (this.seed == get_date_string()) {
+            document.getElementById("page_header").innerHTML = "LINGORDLE OF THE DAY" }
+        else {
+            document.getElementById("page_header").innerHTML = "LINGORDLE" }
 
         console.log("language: ", this.language)
         console.log("word length: ", this.word_len)
@@ -570,7 +582,7 @@ class UI {
         close_settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", false)')
 
         let hard_mode_checkbox = create_switch(parent, " hard mode", "hard_mode_checkbox")
-        hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')
+        hard_mode_checkbox.setAttribute('onclick', 'document.value.reset(null, null, null, this.checked)')
 
         let select = create_and_append("select", parent, "language_select")
         let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek", "polish"]
@@ -614,6 +626,10 @@ class UI {
             } else {
             game.reset(word_len, null, null) }
         })
+
+        let word_otd_btn = create_and_append('div', parent, 'word_otd_btn', 'btn')
+        word_otd_btn.innerHTML = "Lingordle of the Day"
+        word_otd_btn.setAttribute('onclick', 'document.value.reset(null, null, null, null, get_date_string())')
     }
 
     init_game_screen() {
@@ -714,13 +730,13 @@ class UI {
 
         alphabet = []
 
-        let keep_lower = ["&#962","&#963","&#223"]
+        let keep_lower = ["&#223"]
 
         let rows = ["q,w,e,r,t,y,u,i,o,p", 
                     "a,s,d,f,g,h,j,k,l", 
                 "enter,z,x,c,v,b,n,m,backspace"]
         if (lang == "greek") {
-            rows = ["&#962,&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960",
+            rows = ["&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960", // removed &#962
             "&#945,&#963,&#948,&#966,&#947,&#951,&#958,&#954,&#955",
             "enter,&#950,&#967,&#968,&#969,&#946,&#957,&#956,backspace"]
         } else if (lang == "dutch") {
@@ -741,7 +757,7 @@ class UI {
                 row.style.width = "90%"
             for (let key of keys.split(",")) {
                 let add_class = ''
-                if (keep_lower.includes(key) || lang == "greek") {
+                if (keep_lower.includes(key)) {
                     add_class = 'keep_lower'
                 }
 
