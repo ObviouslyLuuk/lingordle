@@ -557,7 +557,8 @@ class UI {
                 if (WORDS_BY_LANG[language]) {
                     console.log("Words loaded!");
                     clearInterval(checkExist);
-                    document.value.reset(null, language, null); 
+                    document.value.reset(null, language, null);
+                    set_visibility("settings_overlay", false);
                 }
             }, 10); // check every 10ms`)
 
