@@ -51,8 +51,15 @@ for (keycode = 65; keycode <= 90; keycode++) {
 var WORDS_BY_LANG = {}
 
 // Maths
-function multinomial_sample(array, probs) {
+function random(seed) {
+    // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript    
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+}
+
+function multinomial_sample(array, probs, seed=null) {
     let rand = Math.random()
+    if (seed) {rand = random(seed)}
     let sum = 0
     for (let i in array) {
         sum += probs[i]
@@ -192,6 +199,17 @@ function set_loader(display="block") {
     loader.style.top = `${document.body.offsetHeight / 2 - loader.offsetHeight / 2}px`
 }
 
+function get_share_link() {
+    let game = document.value
+
+    let url = new URL(window.location.href)
+    url.searchParams.set("lang", game.language)
+    url.searchParams.set("word_len", game.word_len)
+    url.searchParams.set("seed", game.seed)
+
+    return url
+}
+
 // Data manipulation
 function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
@@ -233,13 +251,14 @@ function remove_accents(word) {
 
 // Classes
 class Game {
-    constructor(word_len=5, attempts=6, language="wordle", hard_mode=false) {
+    constructor(word_len=5, attempts=6, language="wordle", hard_mode=false, seed=null) {
         document.value = this
 
         this.word_len = word_len
         this.attempts = attempts
         this.language = language
         this.hard_mode = hard_mode
+        this.seed = seed
 
         this.word_probs = WORDS_BY_LANG[language]
         this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
@@ -249,7 +268,8 @@ class Game {
         ))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
-            Object.values(this.mystery_words)
+            Object.values(this.mystery_words),
+            this.seed
         )
 
         this.ui = new UI(word_len, attempts)
@@ -428,8 +448,8 @@ class Game {
         this.mystery_words = normalize_word_probs(apply_sigmoid(
             this.get_mystery_words(this.language, word_len)
         ))
-        console.log("mystery words: ", Object.entries(this.mystery_words))
-        console.log("allowed guesses: ", Object.keys(this.allowed_guesses))
+        // console.log("mystery words: ", Object.entries(this.mystery_words))
+        // console.log("allowed guesses: ", Object.keys(this.allowed_guesses))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
             Object.values(this.mystery_words)
@@ -437,6 +457,7 @@ class Game {
 
         if (attempts)
             this.attempts = attempts
+        this.seed = Math.random()*100
 
         this.ui.reset(word_len, this.attempts, this.language)
         setTimeout(() => { 
@@ -464,7 +485,10 @@ class UI {
         this.init_grid(screen_mid_mid, word_len, attempts)
         this.init_keyboard(document.getElementById('game_screen_mid_bott'), lang)
         this.resize()
-        set_loader("none")      
+        set_loader("none")
+
+        let new_url = get_share_link()
+        window.history.pushState(null, document.title, new_url.pathname+new_url.search)
     }
 
     resize(ui=null) {
@@ -508,8 +532,9 @@ class UI {
     }
 
     init_settings(parent) {
-        let close_settings_btn = create_and_append('div', parent, 'close_settings_btn', 'btn')
-        close_settings_btn.innerHTML = "Close Settings"
+        let close_settings_btn = create_and_append('div', parent, 'close_settings_btn', 'butn close_btn')
+        // close_settings_btn.innerHTML = "Close Settings"
+        create_and_append("span", close_settings_btn, null, "glyphicon glyphicon-remove")        
         close_settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", false)')
 
         let hard_mode_checkbox = create_switch(parent, " hard mode", "hard_mode_checkbox")
@@ -558,7 +583,7 @@ class UI {
             } else {
             game.reset(word_len, null, null) }
         })
-    }    
+    }
 
     init_game_screen() {
         let game_screen = create_and_append('div', null, "game_screen")
@@ -707,7 +732,6 @@ class UI {
     }
 
     enter_letter(letter) {
-        console.log(letter)
         let cell = this.current_cell
         cell.innerHTML = letter
         if (cell.nextElementSibling != null)
@@ -785,12 +809,39 @@ class UI {
 
 }
 
+const queryString = window.location.search
+const urlParams = new URLSearchParams(queryString)
+
 let language = "wordle"
+if (urlParams.has("lang")) {
+    language = urlParams.get("lang")
+}
+console.log("language: ", language)
+
+let word_len = 5
+if (urlParams.has("word_len")) {
+    word_len = urlParams.get("word_len")
+}
+console.log("word length: ", word_len)
+
+let attempts = 6
+if (urlParams.has("attempts")) {
+    attempts = urlParams.get("attempts")
+}
+console.log("attempts: ", attempts)
+
+let date = new Date()
+let seed = `${date.getFullYear()}${date.getMonth()+1}${date.getDate()}`
+if (urlParams.has("seed")) {
+    seed = urlParams.get("seed")
+}
+console.log("seed: ", seed)
+
 let id = load_word_probs(language)
 let checkExist = setInterval(function() {
     if (WORDS_BY_LANG[language]) {
         console.log("Words loaded!");
         clearInterval(checkExist);
-        new Game(5, 6, language, false, false)
+        new Game(word_len, attempts, language, false, seed)
     }
 }, 10); // check every 10ms
