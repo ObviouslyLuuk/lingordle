@@ -30,6 +30,11 @@ accent_dict = {
     '\xfb': 'u',
     '\xfc': 'u',
     '\u015b': 's',
+    '\u0105': 'a',
+    '\u0107': 'c',
+    '\u0119': 'e',
+    '\u017a': 'z',
+    '\u017c': 'z',
 }
 for (let [k, v] of Object.entries(accent_dict)) {
     accent_dict[k.toUpperCase()] = v.toUpperCase()
@@ -347,7 +352,6 @@ class Game {
         if (check_vocab) {
             let allowed = false
             for (let allowed_guess of Object.keys(this.allowed_guesses)) {
-                console.log(remove_accents(allowed_guess))
                 if (guessed_word == remove_accents(allowed_guess)) {
                     allowed = true }
             }
@@ -424,7 +428,8 @@ class Game {
         this.mystery_words = normalize_word_probs(apply_sigmoid(
             this.get_mystery_words(this.language, word_len)
         ))
-        console.log(Object.entries(this.mystery_words))
+        console.log("mystery words: ", Object.entries(this.mystery_words))
+        console.log("allowed guesses: ", Object.keys(this.allowed_guesses))
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
             Object.values(this.mystery_words)
@@ -511,7 +516,7 @@ class UI {
         hard_mode_checkbox.setAttribute('onclick', 'document.value.hard_mode=this.checked; document.value.reset()')
 
         let select = create_and_append("select", parent, "language_select")
-        let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek"]
+        let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek", "polish"]
         languages.sort()
         languages.push("wordle")
         for (let lang of languages) {
@@ -666,6 +671,8 @@ class UI {
             rows[1] += ",&#230,&#339"
         } else if (lang == "german") {
             rows[1] += ",&#223"
+        } else if (lang == "polish") {
+            rows[1] += ",&#322"
         }
         let keyboard = create_and_append('div', parent, id="keyboard")
 
