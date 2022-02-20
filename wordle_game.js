@@ -668,13 +668,16 @@ class UI {
         this.color_row(row, Array(word.length).fill("correct"), false)
 
         for (let text of [
-            '<br>You can change the language and word length in the settings <span class="glyphicon glyphicon-cog"></span>.',
+            '<br>Every day this homepage opens on the Lingordle of the Day, which is the same for everyone.',
+            'By clicking the replay button <span class="glyphicon glyphicon-repeat"></span> you can keep playing with random words.',
+            'You can reset to the Lingordle of the Day in the settings <span class="glyphicon glyphicon-cog"></span>.',
+            'You can also change the language and word length there.',
         ]) {
             let p = create_and_append("p", parent, null, null)
             p.innerHTML = text
         }
 
-        word = "amigos"
+        word = "magnifique"
         board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
         board.style.margin = "5px"
         row = board.firstChild
