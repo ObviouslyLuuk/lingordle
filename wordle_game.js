@@ -224,6 +224,8 @@ function get_share_link(include_seed=false) {
     url.searchParams.set("word_len", game.word_len)
     if (include_seed) {
         url.searchParams.set("seed", game.seed) }
+    else {
+        url.searchParams.delete("seed") }
 
     return url
 }
@@ -450,9 +452,9 @@ class Game {
 
         if (attempts) {
             this.attempts = attempts }
-        if (hard_mode) {
+        if (hard_mode != null) {
             this.hard_mode = hard_mode }
-        if (seed) {
+        if (seed != null) {
             this.seed = seed }          
         
         if (this.word_len != word_len || this.language != language) {
@@ -488,10 +490,15 @@ class Game {
         else {
             document.getElementById("page_header").innerHTML = "LINGORDLE" }
 
+        let new_url = get_share_link((seed != null))
+        window.history.pushState(null, document.title, new_url.pathname+new_url.search)
+
+        console.log("NEW ROUND")
         console.log("language: ", this.language)
         console.log("word length: ", this.word_len)
         console.log("attempts: ", this.attempts)
-        console.log("seed: ", this.seed)        
+        console.log("hard mode: ", this.hard_mode)
+        console.log("seed: ", this.seed)
     }
 }
 
@@ -515,9 +522,6 @@ class UI {
         this.init_keyboard(document.getElementById('game_screen_mid_bott'), lang)
         this.resize()
         set_loader("none")
-
-        let new_url = get_share_link()
-        window.history.pushState(null, document.title, new_url.pathname+new_url.search)
     }
 
     resize(ui=null) {
