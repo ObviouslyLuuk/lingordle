@@ -35,6 +35,22 @@ accent_dict = {
     '\u0119': 'e',
     '\u017a': 'z',
     '\u017c': 'z',
+    '\u03ae': '\u03b7',
+    '\u0389': '\u0397',
+    '\u038e': '\u03a5',
+    '\u038a': '\u0399',
+    '\u03cb': '\u03c5',
+    '\u03b0': '\u03c5',
+    '\u03cd': '\u03c5',
+    '\u0388': '\u0395',
+    '\u038c': '\u039f',
+    '\u03ad': '\u03b5',
+    '\u03cc': '\u03bf',
+    '\u03ca': '\u03b9',
+    '\u03af': '\u03b9',
+    '\u0390': '\u03b9',
+    '\u03ac': '\u03b1',
+    '\u03ce': '\u03c9',
 }
 for (let [k, v] of Object.entries(accent_dict)) {
     accent_dict[k.toUpperCase()] = v.toUpperCase()
@@ -199,15 +215,22 @@ function set_loader(display="block") {
     loader.style.top = `${document.body.offsetHeight / 2 - loader.offsetHeight / 2}px`
 }
 
-function get_share_link() {
+function get_share_link(include_seed=false) {
     let game = document.value
 
     let url = new URL(window.location.href)
     url.searchParams.set("lang", game.language)
     url.searchParams.set("word_len", game.word_len)
-    url.searchParams.set("seed", game.seed)
+    if (include_seed) {
+        url.searchParams.set("seed", game.seed) }
 
     return url
+}
+
+function get_date_string() {
+    let date = new Date()
+    let utc_date = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+    return `${utc_date.getFullYear()}${utc_date.getMonth()+1}${utc_date.getDate()}`    
 }
 
 // Data manipulation
@@ -360,7 +383,7 @@ class Game {
     }
     
     lose_fn() {
-        this.ui.display_message("You lose.\nThe answer was "+this.mystery_word.toUpperCase(), 3600000)
+        this.ui.display_message("You lose.\nThe answer was "+this.mystery_word, 3600000)
         this.ui.current_cell = null
     }
 
@@ -417,9 +440,9 @@ class Game {
             this.mystery_words = normalize_word_probs(this.mystery_words)
         } else {
             this.mystery_words = {}
-            // Only add lowercase words without accents
+            // Only add lowercase words without accents (unless greek)
             for (let [word, count] of Object.entries(this.allowed_guesses)) {
-                if (word[0] == word[0].toLowerCase() && word == remove_accents(word)) {
+                if (word[0] == word[0].toLowerCase() && (word == remove_accents(word) || language == "greek") ) {
                     this.mystery_words[word] = count }
             }
         }
@@ -442,7 +465,8 @@ class Game {
             this.language = language
             this.word_probs = WORDS_BY_LANG[this.language]
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
-        }
+        } else {
+            this.seed = Math.random()*100 }
 
         this.allowed_guesses = this.filtered_word_probs
         this.mystery_words = normalize_word_probs(apply_sigmoid(
@@ -457,12 +481,20 @@ class Game {
 
         if (attempts)
             this.attempts = attempts
-        this.seed = Math.random()*100
 
         this.ui.reset(word_len, this.attempts, this.language)
         setTimeout(() => { 
             this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}, total mystery words: ${Object.keys(this.mystery_words).length}`, 5000)
         }, 100)
+
+        document.getElementById("word_len_input").value = this.word_len
+        document.getElementById(this.language+"_option").selected = true
+        document.getElementById("hard_mode_checkbox_input").checked = this.hard_mode
+
+        console.log("language: ", this.language)
+        console.log("word length: ", this.word_len)
+        console.log("attempts: ", this.attempts)
+        console.log("seed: ", this.seed)        
     }
 }
 
@@ -552,7 +584,6 @@ class UI {
         }
         select.setAttribute("onchange", `let language = this.value;
             load_word_probs(language);
-            if (language == "wordle") { document.getElementById("word_len_input").value = 5 };
             let checkExist = setInterval(function() {
                 if (WORDS_BY_LANG[language]) {
                     console.log("Words loaded!");
@@ -572,7 +603,6 @@ class UI {
             }
             if (game.language == "wordle" && word_len != 5) {
                 let language = "english"
-                document.getElementById(language+"_option").selected = true;
                 load_word_probs(language)
 
                 let checkExist = setInterval(function() {
@@ -684,6 +714,8 @@ class UI {
 
         alphabet = []
 
+        let keep_lower = ["&#962","&#963","&#223"]
+
         let rows = ["q,w,e,r,t,y,u,i,o,p", 
                     "a,s,d,f,g,h,j,k,l", 
                 "enter,z,x,c,v,b,n,m,backspace"]
@@ -701,8 +733,6 @@ class UI {
             rows[1] += ",&#322"
         }
         let keyboard = create_and_append('div', parent, id="keyboard")
-
-        let keep_lower = ["&#962","&#963","&#223"]
         
         for (let i in rows) {
             let keys = rows[i]
@@ -711,7 +741,7 @@ class UI {
                 row.style.width = "90%"
             for (let key of keys.split(",")) {
                 let add_class = ''
-                if (keep_lower.includes(key)) {
+                if (keep_lower.includes(key) || lang == "greek") {
                     add_class = 'keep_lower'
                 }
 
@@ -831,8 +861,7 @@ if (urlParams.has("attempts")) {
 }
 console.log("attempts: ", attempts)
 
-let date = new Date()
-let seed = `${date.getFullYear()}${date.getMonth()+1}${date.getDate()}`
+let seed = get_date_string()
 if (urlParams.has("seed")) {
     seed = urlParams.get("seed")
 }
