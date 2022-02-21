@@ -573,6 +573,8 @@ class UI {
 
         let hard_mode_checkbox = create_switch(parent, " hard mode", "hard_mode_checkbox")
         hard_mode_checkbox.setAttribute('onclick', 'document.value.reset(null, null, null, this.checked)')
+        let subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'Revealed letters must be used in subsequent guesses.'
 
         let select = create_and_append("select", parent, "language_select")
         let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek", "polish"]
@@ -627,8 +629,28 @@ class UI {
         create_and_append("span", close_help_btn, null, "glyphicon glyphicon-remove")        
         close_help_btn.setAttribute('onclick', 'set_visibility("help_overlay", false)')
 
+        let cell_width = 50
+        let word, board, row
+
         for (let text of [
-            'Guess the LINGORDLE in six tries.',
+            'This WORDLE clone allows you to change the language and word length in the settings <span class="glyphicon glyphicon-cog"></span>.',
+        ]) {
+            let p = create_and_append("p", parent, null, null)
+            p.innerHTML = text
+        }
+
+        word = "magnifique"
+        board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
+        board.style.margin = "5px"
+        row = board.firstChild
+        for (let i in word) {
+            let cell = row.children[i]
+            cell.innerHTML = word[i]
+        }
+        this.color_row(row, Array(word.length).fill("correct"), false) 
+
+        for (let text of [
+            '<br>Guess the LINGORDLE in six tries.',
             'Each guess must be a valid word. Hit the enter button to submit.',
             'After each guess, the color of the tiles will change to show how close your guess was to the word.<br>',
         ]) {
@@ -636,12 +658,10 @@ class UI {
             p.innerHTML = text
         }
 
-        let cell_width = 50
-
-        let word = "sheep"
-        let board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
+        word = "sheep"
+        board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
         board.style.margin = "5px"
-        let row = board.firstChild
+        row = board.firstChild
         for (let i in word) {
             let cell = row.children[i]
             cell.innerHTML = word[i]
@@ -668,24 +688,13 @@ class UI {
         this.color_row(row, Array(word.length).fill("correct"), false)
 
         for (let text of [
-            '<br>Every day this homepage opens on the Lingordle of the Day, which is the same for everyone.',
+            '<br>Every day this homepage opens on the "Lingordle of the Day", which is the same for everyone.',
             'By clicking the replay button <span class="glyphicon glyphicon-repeat"></span> you can keep playing with random words.',
             'You can reset to the Lingordle of the Day in the settings <span class="glyphicon glyphicon-cog"></span>.',
-            'You can also change the language and word length there.',
         ]) {
             let p = create_and_append("p", parent, null, null)
             p.innerHTML = text
         }
-
-        word = "bon"
-        board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
-        board.style.margin = "5px"
-        row = board.firstChild
-        for (let i in word) {
-            let cell = row.children[i]
-            cell.innerHTML = word[i]
-        }
-        this.color_row(row, Array(word.length).fill("correct"), false) 
     }
 
     init_game_screen() {

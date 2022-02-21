@@ -161,6 +161,12 @@
   /* grid-template-columns: auto auto; */
 }
 
+.subscript {
+  font-size: small;
+  color: #aaaaaa;
+  padding-left: 10px;
+}
+
 #btns_container {
   display: grid;
 }
