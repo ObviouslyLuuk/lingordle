@@ -149,11 +149,12 @@
   position: absolute;
   display: none;
   width: 90%;
+  margin: 20px;
   background-color: rgba(0, 0, 0, 0.9);
   padding: 20px;
   min-height: 40.5%;
   border-radius: 20px;
-  justify-content: center;
+  /* justify-content: center; */
 }
 
 #settings_overlay {

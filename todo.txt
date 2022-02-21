@@ -3,3 +3,4 @@ add word inclusion threshold for easier games
 add mode where words from different languages can be picked
 
 add sharing function like the original
+add subscript for hard mode

@@ -639,7 +639,7 @@ class UI {
         let cell_width = 50
 
         let word = "sheep"
-        let board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
+        let board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
         board.style.margin = "5px"
         let row = board.firstChild
         for (let i in word) {
@@ -658,7 +658,7 @@ class UI {
         }
 
         word = "sauce"
-        board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
+        board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
         board.style.margin = "5px"
         row = board.firstChild
         for (let i in word) {
@@ -677,8 +677,8 @@ class UI {
             p.innerHTML = text
         }
 
-        word = "magnifique"
-        board = this.build_grid(parent, null, word.length, 1, 5, null, cell_width*word.length)
+        word = "bon"
+        board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
         board.style.margin = "5px"
         row = board.firstChild
         for (let i in word) {
@@ -697,9 +697,9 @@ class UI {
         let screen_mid_right = create_and_append('div', screen_mid, "game_screen_mid_right")
         let screen_mid_bott = create_and_append('div', screen_mid, "game_screen_mid_bott")
         // let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
-        let settings_overlay = create_and_append('div', screen_mid, "settings_overlay", "overlay")
+        let settings_overlay = create_and_append('div', document.body, "settings_overlay", "overlay")
         let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
-        let help_overlay = create_and_append('div', screen_mid, "help_overlay", "overlay")
+        let help_overlay = create_and_append('div', document.body, "help_overlay", "overlay")
         create_and_append('div', document.body, "loader_div", "loader")
 
         let message = create_and_append('div', screen_mid_bott, "message")
