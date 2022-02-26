@@ -536,8 +536,6 @@ class UI {
         // let screen_right = document.getElementById('game_screen_right')
         let settings_overlay = document.getElementById('settings_overlay')
 
-        let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
-
         // screen_left.style['height'] = `${screen_mid.offsetHeight}px`
         // Mobile view
         if (document.body.offsetHeight > document.body.offsetWidth) {
@@ -554,9 +552,10 @@ class UI {
             screen_mid.style.width = `100%`
         }
 
-        if (!ui && document.value) {ui = document.value.ui}
-        if (ui) {
-            document.value.ui.init_keyboard(document.getElementById('game_screen_mid_bott'), null, keyboard_width) }
+        let keyboard = document.getElementById("keyboard")
+        if (keyboard) {
+            let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
+            keyboard.style.width = `${keyboard_width}px` }
     }
 
     key_down(key) {
@@ -710,7 +709,7 @@ class UI {
         let form_HTML = `<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdqORg91cAGu2u4i4KqGengJkiADum6AoS-n7K-c7xHuFZGiA/viewform?embedded=true" 
             width="${width}" height="${height}" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`
         parent.innerHTML = form_HTML
-        
+
         let close_form_btn = create_and_append('div', parent, 'close_form_btn', 'butn close_btn')
         create_and_append("span", close_form_btn, null, "glyphicon glyphicon-remove")        
         close_form_btn.setAttribute('onclick', 'set_visibility("form_overlay", false)')
