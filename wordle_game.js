@@ -389,9 +389,10 @@ class Game {
                     allowed = true }
             }
             if (!allowed) {
-                this.ui.display_message(guessed_word.toUpperCase()+` isn't a valid guess. 
-                Disagree? <a class='link' onclick='set_visibility("form_overlay", true)'>Add word</a>`,
+                this.ui.display_message(guessed_word.toUpperCase()+` isn't a valid guess.`,
                 10000)
+                let msg_div = document.getElementById('message')
+                msg_div.innerHTML += ` Disagree? <a class='link' onclick='set_visibility("form_overlay", true)'>Add word</a>`
                 return false
             }
         }
@@ -706,9 +707,12 @@ class UI {
 
     init_form(parent) {
         let width=400, height=600
-        let form_HTML = `<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdqORg91cAGu2u4i4KqGengJkiADum6AoS-n7K-c7xHuFZGiA/viewform?embedded=true" 
+        let form_HTML = `<iframe id="form_frame" src="https://docs.google.com/forms/d/e/1FAIpQLSdqORg91cAGu2u4i4KqGengJkiADum6AoS-n7K-c7xHuFZGiA/viewform?embedded=true" 
             width="${width}" height="${height}" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`
         parent.innerHTML = form_HTML
+
+        // let div_to_remove = document.getElementById('form_frame').contentWindow.document.getElementsByClassName("freebirdFormviewerViewFooterEmbeddedBackground")[0]
+        // div_to_remove.parentElement.removeChild(div_to_remove)
 
         let close_form_btn = create_and_append('div', parent, 'close_form_btn', 'butn close_btn')
         create_and_append("span", close_form_btn, null, "glyphicon glyphicon-remove")        
@@ -739,13 +743,17 @@ class UI {
         create_and_append("span", reset_btn, null, "glyphicon glyphicon-repeat")        
         reset_btn.setAttribute('onclick', 'document.value.reset()')
 
-        let help_btn = create_and_append('div', screen_mid_right, 'help_btn', 'butn')
-        create_and_append("span", help_btn, null, "glyphicon glyphicon-question-sign")
-        help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
-
         let settings_btn = create_and_append('div', screen_mid_right, 'settings_btn', 'butn')
         create_and_append("span", settings_btn, null, "glyphicon glyphicon-cog")
         settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", true)')
+
+        let help_btn = create_and_append('div', screen_mid_right, 'help_btn', 'butn')
+        help_btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+        </svg>`
+        help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
 
         return { settings_div, help_overlay, win_overlay, form_overlay }
     }
@@ -836,7 +844,8 @@ class UI {
 
         let rows = ["q,w,e,r,t,y,u,i,o,p", 
                     "a,s,d,f,g,h,j,k,l", 
-                "enter,z,x,c,v,b,n,m,backspace"]
+                "z,x,c,v,b,n,m,backspace",
+                "enter"]
         if (lang == "greek") {
             rows = ["&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960", // removed &#962
             "&#945,&#963,&#948,&#966,&#947,&#951,&#958,&#954,&#955",
@@ -871,6 +880,12 @@ class UI {
 
                 if (!["enter", "backspace"].includes(key)) {
                     alphabet.push(btn.innerHTML)
+                } else if (key == "backspace") {
+                    btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-backspace-fill" viewBox="0 0 16 16">
+                        <path d="M15.683 3a2 2 0 0 0-2-2h-7.08a2 2 0 0 0-1.519.698L.241 7.35a1 1 0 0 0 0 1.302l4.843 5.65A2 2 0 0 0 6.603 15h7.08a2 2 0 0 0 2-2V3zM5.829 5.854a.5.5 0 1 1 .707-.708l2.147 2.147 2.146-2.147a.5.5 0 1 1 .707.708L9.39 8l2.146 2.146a.5.5 0 0 1-.707.708L8.683 8.707l-2.147 2.147a.5.5 0 0 1-.707-.708L7.976 8 5.829 5.854z"/>
+                    </svg>
+                    `
                 }
             }
         }

@@ -50,6 +50,10 @@
     user-select: none;
 }
 
+#enter-key {
+  background-color: var(--correct_color);
+}
+
 .keep_lower {
   text-transform: lowercase !important;
 }
@@ -159,6 +163,10 @@
 
 #settings_overlay {
   /* grid-template-columns: auto auto; */
+}
+
+#form_overlay iframe {
+  width: 100%;
 }
 
 .subscript {
