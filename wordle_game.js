@@ -389,7 +389,9 @@ class Game {
                     allowed = true }
             }
             if (!allowed) {
-                this.ui.display_message(guessed_word.toUpperCase()+" isn't a valid guess")
+                this.ui.display_message(guessed_word.toUpperCase()+` isn't a valid guess. 
+                Disagree? <a class='link' onclick='set_visibility("form_overlay", true)'>Add word</a>`,
+                10000)
                 return false
             }
         }
@@ -507,9 +509,11 @@ class UI {
     constructor(word_len, attempts) {
         this.current_cell = null
 
-        let {settings_div, help_overlay} = this.init_game_screen()
+        let {settings_div, help_overlay, win_overlay, form_overlay} = this.init_game_screen()
         this.init_settings(settings_div)
         this.init_help(help_overlay)
+        this.init_win_screen(win_overlay)
+        this.init_form(form_overlay)
         this.reset(word_len, attempts)
 
         window.addEventListener('resize', this.resize)
@@ -697,6 +701,21 @@ class UI {
         }
     }
 
+    init_win_screen(parent) {
+
+    }
+
+    init_form(parent) {
+        let width=400, height=600
+        let form_HTML = `<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdqORg91cAGu2u4i4KqGengJkiADum6AoS-n7K-c7xHuFZGiA/viewform?embedded=true" 
+            width="${width}" height="${height}" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`
+        parent.innerHTML = form_HTML
+        
+        let close_form_btn = create_and_append('div', parent, 'close_form_btn', 'butn close_btn')
+        create_and_append("span", close_form_btn, null, "glyphicon glyphicon-remove")        
+        close_form_btn.setAttribute('onclick', 'set_visibility("form_overlay", false)')
+    }
+
     init_game_screen() {
         let game_screen = create_and_append('div', null, "game_screen")
         // let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
@@ -709,6 +728,8 @@ class UI {
         let settings_overlay = create_and_append('div', document.body, "settings_overlay", "overlay")
         let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
         let help_overlay = create_and_append('div', document.body, "help_overlay", "overlay")
+        let win_overlay = create_and_append('div', document.body, "win_overlay", "overlay")
+        let form_overlay = create_and_append('div', document.body, "form_overlay", "overlay")
         create_and_append('div', document.body, "loader_div", "loader")
 
         let message = create_and_append('div', screen_mid_bott, "message")
@@ -727,7 +748,7 @@ class UI {
         create_and_append("span", settings_btn, null, "glyphicon glyphicon-cog")
         settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", true)')
 
-        return { settings_div, help_overlay }
+        return { settings_div, help_overlay, win_overlay, form_overlay }
     }
 
     init_grid(parent, word_len, attempts) {
@@ -787,8 +808,9 @@ class UI {
         cell.setAttribute('data-state', state)
         if (change_keys && !this.inference && alphabet.includes(cell.innerHTML)) {
             let key = document.getElementById(`${cell.innerHTML}-key`)
-            if (key.getAttribute("data-state") != "correct")
-                key.setAttribute('data-state', state)            
+            if      (key.getAttribute("data-state") != "correct" &&
+                   !(key.getAttribute("data-state") == "present" && state == "absent"))
+                key.setAttribute('data-state', state)
         }
     }
 
