@@ -1,9 +1,28 @@
+
+const emoji_dict_code = {
+    "correct": "\uD83D\uDFE9",
+    "present": "\uD83D\uDFE8",
+    "absent": "\u2b1b",
+}
+const emoji_dict = {
+    "correct": "🟩",
+    "present": "🟨",
+    "absent": "⬛",
+}
+
+var TWITTER_SHARE_LINK = `https://twitter.com/intent/tweet?text=`
+
+const HTML_DICT = {
+    " ": "%20",
+    "\n": "%0A",
+}
+
 const latin_alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 const greek_alphabet = ['\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', '\u03D1', '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD', '\u03BE', '\u03BF', '\u03C0', '\u03D6', '\u03C1', '\u03C2', '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7', '\u03C8', '\u03C9']
 
 var alphabet = latin_alphabet
 
-accent_dict = {
+var accent_dict = {
     '\xe0': 'a',
     '\xe1': 'a',
     '\xe2': 'a',
@@ -77,6 +96,15 @@ const BACKSPACE_0 = `
 const BACKSPACE_1 = `
 <svg xmlns="http://www.w3.org/2000/svg" height="21" viewBox="0 0 24 24" width="24">
     <path fill="currentColor" d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"></path>
+</svg>`
+const TWITTER_ICON = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter" viewBox="0 0 16 16">
+  <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/>
+</svg>`
+const COPY_ICON = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
 </svg>`
 
 var WORDS_BY_LANG = {}
@@ -250,6 +278,42 @@ function get_date_string() {
     return `${utc_date.getFullYear()}${utc_date.getMonth()+1}${utc_date.getDate()}`    
 }
 
+function HTMLify_text(text) {
+    for (let [key, value] of Object.entries(HTML_DICT)) {
+        text = text.replaceAll(key, value)
+    }
+    return text
+}
+
+function get_share_string(use_dict=emoji_dict_code) {
+    let game = document.value
+    let results = game.get_results()
+    if (results.length < 1) {return null}
+
+    let language = game.language
+    let attempts = results.length
+    let total_attempts = game.attempts
+
+    let last_row = results[results.length-1]
+    if (last_row.includes("present") || last_row.includes("absent")) {attempts = "X"}
+
+    let text = `${language[0].toUpperCase()+language.slice(1)} Lingordle ${attempts}/${total_attempts}\n`
+    for (let row of results) {
+        text += "\n"
+        for (let result of row) {
+            text += use_dict[result]
+        }
+    }
+    return text
+}
+
+function get_twitter_link() {
+    let text = get_share_string(emoji_dict)
+    if (!text) {return null}
+    let link = TWITTER_SHARE_LINK + HTMLify_text(text)
+    return link
+}
+
 // Data manipulation
 function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
@@ -287,6 +351,15 @@ function remove_accents(word) {
         }
     }
     return new_word
+}
+
+function copy_to_clipboard(text) {
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
+    navigator.clipboard.writeText(text).then(function() {
+        /* clipboard successfully set */
+    }, function() {
+        console.log("clipboard write failed")
+    });
 }
 
 // Classes
@@ -384,11 +457,13 @@ class Game {
     win_fn() {
         this.ui.display_message("You win!")
         this.ui.current_cell = null
+        this.ui.update_win_screen(true)
     }
     
     lose_fn() {
         this.ui.display_message("You lose.\nThe answer was "+this.mystery_word.toUpperCase(), 3600000)
         this.ui.current_cell = null
+        this.ui.update_win_screen(false)
     }
 
     get_guess(row, check_vocab=true) {
@@ -411,6 +486,17 @@ class Game {
             }
         }
         return guessed_word
+    }
+
+    get_results() {
+        let results = []
+        for (let row of document.getElementById("board").children) {
+            let result = this.ui.get_state(row)
+            if (!result) {break}
+
+            results.push(result)
+        }
+        return results
     }
     
     attempt_word(guessed_word, current_row) {
@@ -456,6 +542,10 @@ class Game {
         return this.mystery_words
     }
 
+    is_L_of_the_day() {
+        return this.seed == get_date_string()
+    }
+
     reset(word_len=null, language=null, attempts=null, hard_mode=null, seed=null) {
         set_loader()
         if (!word_len)
@@ -473,7 +563,7 @@ class Game {
             this.word_probs = WORDS_BY_LANG[this.language]
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         } else {
-            this.seed = Math.random()*1000 }
+            this.seed = parseInt(Math.random()*50000) }
 
         if (attempts) {
             this.attempts = attempts }
@@ -502,7 +592,7 @@ class Game {
         document.getElementById("word_len_input").value = this.word_len
         document.getElementById(this.language+"_option").selected = true
         document.getElementById("hard_mode_checkbox_input").checked = this.hard_mode
-        if (this.seed == get_date_string()) {
+        if (this.is_L_of_the_day()) {
             document.getElementById("page_header").innerHTML = "LINGORDLE OF THE DAY" }
         else {
             document.getElementById("page_header").innerHTML = "LINGORDLE" }
@@ -724,7 +814,44 @@ class UI {
     }
 
     init_win_screen(parent) {
+        let close_btn = create_and_append('div', parent, null, 'butn close_btn')
+        create_and_append("span", close_btn, null, "glyphicon glyphicon-remove")        
+        close_btn.setAttribute('onclick', 'set_visibility("win_overlay", false)')
 
+        let title = create_and_append('h1', parent, "win_title", null)
+        title.innerHTML = ""
+
+        let tweet_btn = create_and_append('button', parent, "tweet_btn", "btn btn-primary")
+        tweet_btn.innerHTML = "Tweet "+TWITTER_ICON
+
+        let copy_btn = create_and_append('button', parent, null, "btn btn-secondary")
+        copy_btn.innerHTML = "Copy result "+COPY_ICON
+        copy_btn.setAttribute("onclick", "copy_to_clipboard(get_share_string())")
+
+        let share_seed_btn = create_and_append('button', parent, "share_seed", "btn btn-secondary")
+        share_seed_btn.innerHTML = "Share this Word"
+        share_seed_btn.setAttribute("onclick", "copy_to_clipboard(get_share_link(true))")
+    }
+
+    update_win_screen(won) {
+        let title = document.getElementById("win_title")
+        if (won) {
+            title.innerHTML = "You Won!"
+        } else {
+            title.innerHTML = `Too bad :(<br>the word was '${document.value.mystery_word.toUpperCase()}'`
+        }
+
+        let share_seed_btn = document.getElementById("share_seed")
+        if (document.value.is_L_of_the_day()) {
+            share_seed_btn.style.display = "none"
+        } else {
+            share_seed_btn.style.display = "block"
+        }
+
+        let tweet_btn = document.getElementById("tweet_btn")
+        tweet_btn.setAttribute('onclick', `window.open("${get_twitter_link()}", '_blank').focus()`)
+
+        set_visibility("win_overlay", true)
     }
 
     init_form(parent) {

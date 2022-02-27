@@ -169,6 +169,10 @@
   width: 100%;
 }
 
+#win_title {
+  text-align: center;
+}
+
 .subscript {
   font-size: small;
   color: #aaaaaa;
