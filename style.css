@@ -3,6 +3,7 @@
   --correct_color: #538d4e;
   --present_color: #b59f3b;
   --absent_color: #3a3a3c;
+  --cool_blue: rgb(0, 115, 255);
 }
 
 /* BUTTONS */
@@ -20,6 +21,10 @@
   top: 0px;
 }
 
+#play_again_btn {
+  background-color: var(--correct_color);
+}
+
 .butn {
   padding: 7px;
   cursor: pointer;
@@ -34,6 +39,7 @@
 .keyboard_row {
     display: grid;
     width: 100%;
+    align-items: center;
 }
 
 .keyboard_btn {
@@ -52,6 +58,10 @@
 
 #enter-key {
   background-color: var(--correct_color);
+  height: 70%;
+  -webkit-text-stroke: thin;
+  display: grid;
+  align-content: center;  
 }
 
 .keep_lower {

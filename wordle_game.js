@@ -85,7 +85,7 @@ for (keycode = 65; keycode <= 90; keycode++) {
 }
 
 const QUESTION_MARK = `
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
     <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
 </svg>`
@@ -614,15 +614,29 @@ class UI {
     constructor(word_len, attempts) {
         this.current_cell = null
 
-        let {settings_div, help_overlay, win_overlay, form_overlay} = this.init_game_screen()
+        let {settings_div, overlays} = this.init_game_screen()
         this.init_settings(settings_div)
-        this.init_help(help_overlay)
-        this.init_win_screen(win_overlay)
-        this.init_form(form_overlay)
+        this.init_help(overlays["help_overlay"]["div"])
+        this.init_win_screen(overlays["win_overlay"]["div"])
+        this.init_form(overlays["form_overlay"]["div"])
         this.reset(word_len, attempts)
 
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {document.value.ui.key_down(keydict[event.keyCode])})
+
+        // Close overlay when clicking elsewhere
+        for (let [id, {div, btn}] of Object.entries(overlays)) {
+            window.addEventListener('click', (e) => {
+                if (e.path.includes(div) || e.path.includes(btn)) {return}
+                set_visibility(id, false)
+            })
+        }
+        // Close help overlay when clicking anywhere
+        window.addEventListener('click', (e) => {
+            let help_btn = document.getElementById("help_btn")
+            if (e.path.includes(help_btn)) {return}
+            set_visibility("help_overlay", false)
+        })
     }
 
     reset(word_len, attempts, lang) {
@@ -831,6 +845,10 @@ class UI {
         let share_seed_btn = create_and_append('button', parent, "share_seed", "btn btn-secondary")
         share_seed_btn.innerHTML = "Share this Word"
         share_seed_btn.setAttribute("onclick", "copy_to_clipboard(get_share_link(true))")
+
+        let play_again_btn = create_and_append('button', parent, "play_again_btn", "btn")
+        play_again_btn.innerHTML = "Play Random Word"
+        play_again_btn.setAttribute("onclick", 'document.value.reset(); set_visibility("win_overlay", false)')
     }
 
     update_win_screen(won) {
@@ -901,7 +919,14 @@ class UI {
         help_btn.innerHTML = QUESTION_MARK
         help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
 
-        return { settings_div, help_overlay, win_overlay, form_overlay }
+        let overlays = {
+            "help_overlay": {div: help_overlay, btn: help_btn},
+            "win_overlay": {div: win_overlay, btn: document.getElementById("keyboard")},
+            "form_overlay": {div: form_overlay, btn: document.getElementById("message")},
+            "settings_overlay": {div: settings_overlay, btn: settings_btn},
+        }
+
+        return { settings_div, overlays }
     }
 
     init_grid(parent, word_len, attempts) {
@@ -988,30 +1013,33 @@ class UI {
 
         let keep_lower = ["&#223"]
 
-        let rows = ["q,w,e,r,t,y,u,i,o,p", 
+        let middle_row = 1
+        let rows = [
+                   "q,w,e,r,t,y,u,i,o,p", 
                     "a,s,d,f,g,h,j,k,l", 
                 "z,x,c,v,b,n,m,backspace",
-                "enter"]
+                "enter",]
         if (lang == "greek") {
-            rows = ["&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960", // removed &#962
+            rows = [
+            "&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960", // removed &#962
             "&#945,&#963,&#948,&#966,&#947,&#951,&#958,&#954,&#955",
             "&#950,&#967,&#968,&#969,&#946,&#957,&#956,backspace",
-            "enter"]
+            "enter",]
         } else if (lang == "dutch") {
-            rows[1] += ",&#307"
+            rows[middle_row] += ",&#307"
         } else if (lang == "french") {
-            rows[1] += ",&#230,&#339"
+            rows[middle_row] += ",&#230,&#339"
         } else if (lang == "german") {
-            rows[1] += ",&#223"
+            rows[middle_row] += ",&#223"
         } else if (lang == "polish") {
-            rows[1] += ",&#322"
+            rows[middle_row] += ",&#322"
         }
         let keyboard = create_and_append('div', parent, id="keyboard")
         
         for (let i in rows) {
             let keys = rows[i]
             let row = create_and_append('div', keyboard, null, "keyboard_row")
-            if (i == 1)
+            if (i == middle_row)
                 row.style.width = "90%"
             for (let key of keys.split(",")) {
                 let add_class = ''
