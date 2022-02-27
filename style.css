@@ -34,6 +34,7 @@
     display: grid;
     justify-items: center;
     width: 100%;
+    margin-top: 10px;
 }
 
 .keyboard_row {
@@ -201,16 +202,16 @@
 }
 
 #message {
-    /* color: black; */
-    /* position: absolute; */
-    /* align-self: center; */
-    /* justify-content: center; */
-    /* background-color: #ffffffee; */
+    color: black;
+    position: absolute;
+    align-self: center;
+    justify-content: center;
+    background-color: #ffffffee;
     /* padding: 20px; */
-    /* border-radius: 5px; */
+    border-radius: 5px;
     text-align: center;
     padding: 10px;
-    /* display: none; */
+    display: none;
     font-weight: bold;
 }
 

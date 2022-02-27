@@ -364,6 +364,7 @@ function copy_to_clipboard(text) {
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
     navigator.clipboard.writeText(text).then(function() {
         /* clipboard successfully set */
+        document.value.ui.display_message("copied to clipboard")
     }, function() {
         console.log("clipboard write failed")
     });
@@ -462,15 +463,13 @@ class Game {
     }
 
     win_fn() {
-        this.ui.display_message("You win!")
-        this.ui.current_cell = null
         this.ui.update_win_screen(true)
+        this.ui.current_cell = null
     }
     
     lose_fn() {
-        this.ui.display_message("You lose.\nThe answer was "+this.mystery_word.toUpperCase(), 3600000)
-        this.ui.current_cell = null
         this.ui.update_win_screen(false)
+        this.ui.current_cell = null
     }
 
     get_guess(row, check_vocab=true) {
@@ -498,7 +497,7 @@ class Game {
     get_results() {
         let results = []
         for (let row of document.getElementById("board").children) {
-            let result = this.ui.get_state(row)
+            let result = this.ui.get_state(row, print=false)
             if (!result) {break}
 
             results.push(result)
@@ -926,7 +925,7 @@ class UI {
 
         create_and_append('div', document.body, "loader_div", "loader")
 
-        let message = create_and_append('div', screen_mid_bott, "message")
+        let message = create_and_append('div', document.body, "message")
         message.innerHTML = "&nbsp"
 
         // Add main buttons
@@ -1119,8 +1118,8 @@ class UI {
         let div = document.getElementById('message')
         div.innerHTML = message
         div.style['display'] = 'block'
-        // setTimeout(() => { div.style['display'] = 'none' }, time)
-        setTimeout(() => { div.innerHTML = '&nbsp' }, time)
+        setTimeout(() => { div.style['display'] = 'none' }, time)
+        // setTimeout(() => { div.innerHTML = '&nbsp' }, time)
     }
 
     word_finished(row) {
@@ -1140,9 +1139,9 @@ class UI {
         return word.join('')        
     }
 
-    get_state(row) {
+    get_state(row, print=true) {
         if (!this.word_finished(row)) {
-            this.display_message("word not finished")
+            if (print) {this.display_message("word not finished")}
             return false
         }
 
