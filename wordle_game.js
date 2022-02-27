@@ -295,7 +295,7 @@ function get_share_string(use_dict=emoji_dict_code) {
     let language = game.language
     let LotD = ""
     let seed_text = `\nseed: ${game.seed}`
-    if (game.is_L_of_the_day()) {
+    if (game.is_LotD()) {
         LotD = "of the Day"
         seed_text = ""
     }
@@ -579,7 +579,7 @@ class Game {
         return this.mystery_words
     }
 
-    is_L_of_the_day() {
+    is_LotD() {
         return this.seed == get_date_string()
     }
 
@@ -622,14 +622,12 @@ class Game {
         )          
 
         this.ui.reset(word_len, this.attempts, this.language)
-        setTimeout(() => { 
-            this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}, total mystery words: ${Object.keys(this.mystery_words).length}`, 5000)
-        }, 100)
+        this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}, total mystery words: ${Object.keys(this.mystery_words).length}`, 5000)
 
         document.getElementById("word_len_input").value = this.word_len
         document.getElementById(this.language+"_option").selected = true
         document.getElementById("hard_mode_checkbox_input").checked = this.hard_mode
-        if (this.is_L_of_the_day()) {
+        if (this.is_LotD()) {
             document.getElementById("page_header").innerHTML = "LINGORDLE OF THE DAY" }
         else {
             document.getElementById("page_header").innerHTML = "LINGORDLE" }
@@ -883,7 +881,7 @@ class UI {
         // this.display_message(message, 10000)
 
         let share_seed_btn = document.getElementById("share_seed")
-        if (document.value.is_L_of_the_day()) {
+        if (document.value.is_LotD()) {
             share_seed_btn.style.display = "none"
         } else {
             share_seed_btn.style.display = "block"
@@ -1149,7 +1147,7 @@ class UI {
         console.log(message)
         let div = document.getElementById('message')
         div.innerHTML = message
-        div.style['display'] = 'block'
+        setTimeout(() => { div.style['display'] = 'block' }, 100) // Delay to make sure it's not immediately set to none
         // setTimeout(() => { div.style['display'] = 'none' }, time)
         // setTimeout(() => { div.innerHTML = '&nbsp' }, time)
     }
