@@ -621,29 +621,12 @@ class UI {
     constructor(word_len, attempts) {
         this.current_cell = null
 
-        let {settings_div, overlays} = this.init_game_screen()
-        this.init_settings(settings_div)
-        this.init_help(overlays["help_overlay"]["div"])
-        this.init_win_screen(overlays["win_overlay"]["div"])
-        this.init_form(overlays["form_overlay"]["div"])
+        this.init_game_screen()
         this.reset(word_len, attempts)
+        this.init_overlays()
 
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {document.value.ui.key_down(keydict[event.keyCode])})
-
-        // Close overlay when clicking elsewhere
-        for (let [id, {div, btn}] of Object.entries(overlays)) {
-            window.addEventListener('click', (e) => {
-                if (e.path.includes(div) || e.path.includes(btn)) {return}
-                set_visibility(id, false)
-            })
-        }
-        // Close help overlay when clicking anywhere
-        window.addEventListener('click', (e) => {
-            let help_btn = document.getElementById("help_btn")
-            if (e.path.includes(help_btn)) {return}
-            set_visibility("help_overlay", false)
-        })
     }
 
     reset(word_len, attempts, lang) {
@@ -859,12 +842,15 @@ class UI {
     }
 
     update_win_screen(won) {
-        let title = document.getElementById("win_title")
+        let message
         if (won) {
-            title.innerHTML = "You Won!"
+            message = "You Won!"
         } else {
-            title.innerHTML = `Too bad :(<br>the word was '${document.value.mystery_word.toUpperCase()}'`
+            message = `Too bad :(<br>the word was '${document.value.mystery_word.toUpperCase()}'`
         }
+        let title = document.getElementById("win_title")
+        title.innerHTML = message
+        this.display_message(message, 10000)
 
         let share_seed_btn = document.getElementById("share_seed")
         if (document.value.is_L_of_the_day()) {
@@ -894,6 +880,40 @@ class UI {
         close_form_btn.setAttribute('onclick', 'set_visibility("form_overlay", false)')
     }
 
+    init_overlays() {
+        let settings_overlay = create_and_append('div', document.body, "settings_overlay", "overlay")
+        let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
+        let help_overlay = create_and_append('div', document.body, "help_overlay", "overlay")
+        let win_overlay = create_and_append('div', document.body, "win_overlay", "overlay")
+        let form_overlay = create_and_append('div', document.body, "form_overlay", "overlay")
+
+        this.init_settings(settings_div)
+        this.init_help(help_overlay)
+        this.init_win_screen(win_overlay)
+        this.init_form(form_overlay)
+
+        let overlays = {
+            "help_overlay": {div: help_overlay, btn_id: "help_btn"},
+            "win_overlay": {div: win_overlay, btn_id: "game_screen_mid_bott"},
+            "form_overlay": {div: form_overlay, btn_id: "message"},
+            "settings_overlay": {div: settings_overlay, btn_id: "settings_btn"},
+        }
+
+        // Close overlay when clicking elsewhere
+        for (let [id, {div, btn_id}] of Object.entries(overlays)) {
+            window.addEventListener('click', (e) => {
+                if (e.path.includes(div) || e.path.includes(document.getElementById(btn_id))) {return}
+                set_visibility(id, false)
+            })
+        }
+        // Close help overlay when clicking anywhere
+        window.addEventListener('click', (e) => {
+            let help_btn = document.getElementById("help_btn")
+            if (e.path.includes(help_btn)) {return}
+            set_visibility("help_overlay", false)
+        })        
+    }
+
     init_game_screen() {
         let game_screen = create_and_append('div', null, "game_screen")
         // let screen_left = create_and_append('div', game_screen, "game_screen_left", "game_screen_division")
@@ -903,11 +923,7 @@ class UI {
         let screen_mid_right = create_and_append('div', screen_mid, "game_screen_mid_right")
         let screen_mid_bott = create_and_append('div', screen_mid, "game_screen_mid_bott")
         // let screen_right = create_and_append('div', game_screen, "game_screen_right", "game_screen_division")
-        let settings_overlay = create_and_append('div', document.body, "settings_overlay", "overlay")
-        let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
-        let help_overlay = create_and_append('div', document.body, "help_overlay", "overlay")
-        let win_overlay = create_and_append('div', document.body, "win_overlay", "overlay")
-        let form_overlay = create_and_append('div', document.body, "form_overlay", "overlay")
+
         create_and_append('div', document.body, "loader_div", "loader")
 
         let message = create_and_append('div', screen_mid_bott, "message")
@@ -925,15 +941,6 @@ class UI {
         let help_btn = create_and_append('div', screen_mid_right, 'help_btn', 'butn')
         help_btn.innerHTML = QUESTION_MARK
         help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
-
-        let overlays = {
-            "help_overlay": {div: help_overlay, btn: help_btn},
-            "win_overlay": {div: win_overlay, btn: document.getElementById("keyboard")},
-            "form_overlay": {div: form_overlay, btn: document.getElementById("message")},
-            "settings_overlay": {div: settings_overlay, btn: settings_btn},
-        }
-
-        return { settings_div, overlays }
     }
 
     init_grid(parent, word_len, attempts) {
