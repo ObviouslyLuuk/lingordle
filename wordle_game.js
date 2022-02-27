@@ -563,7 +563,7 @@ class Game {
             this.word_probs = WORDS_BY_LANG[this.language]
             this.filtered_word_probs = this.filter_by_len(word_len, this.word_probs)
         } else {
-            this.seed = parseInt(Math.random()*50000) }
+            this.seed = parseInt(Math.random()*99999) }
 
         if (attempts) {
             this.attempts = attempts }
