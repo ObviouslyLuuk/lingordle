@@ -896,6 +896,7 @@ class UI {
             "win_overlay": {div: win_overlay, btn_id: "game_screen_mid_bott"},
             "form_overlay": {div: form_overlay, btn_id: "message"},
             "settings_overlay": {div: settings_overlay, btn_id: "settings_btn"},
+            "message": {div: document.getElementById("message"), btn_id: "message"}
         }
 
         // Close overlay when clicking elsewhere
@@ -1118,7 +1119,7 @@ class UI {
         let div = document.getElementById('message')
         div.innerHTML = message
         div.style['display'] = 'block'
-        setTimeout(() => { div.style['display'] = 'none' }, time)
+        // setTimeout(() => { div.style['display'] = 'none' }, time)
         // setTimeout(() => { div.innerHTML = '&nbsp' }, time)
     }
 
