@@ -174,8 +174,10 @@ function set_visibility(element_id, vis) {
     element = document.getElementById(element_id)
     if (vis)
         element.style['display'] = "grid"
+        // unfade(element)
     else
         element.style['display'] = 'none'
+        // fade(element)
 }
 
 function load_word_probs(language) {
@@ -319,6 +321,35 @@ function get_twitter_link() {
     if (!text) {return null}
     let link = TWITTER_SHARE_LINK + HTMLify_text(text)
     return link
+}
+
+function fade(element) {
+    // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
+    var op = 1;  // initial opacity
+    var timer = setInterval(function () {
+        if (op <= 0.1){
+            clearInterval(timer);
+            element.style.display = 'none';
+        }
+        element.style.opacity = op;
+        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+        op -= op * 0.1;
+    }, 50);
+}
+
+function unfade(element, display="grid") {
+    // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
+    var op = 0.1;  // initial opacity
+    element.style.opacity = op;
+    element.style.display = display;
+    var timer = setInterval(function () {
+        if (op >= 1){
+            clearInterval(timer);
+        }
+        element.style.opacity = op;
+        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+        op += op * 0.1;
+    }, 10);
 }
 
 // Data manipulation
@@ -849,7 +880,7 @@ class UI {
         }
         let title = document.getElementById("win_title")
         title.innerHTML = message
-        this.display_message(message, 10000)
+        // this.display_message(message, 10000)
 
         let share_seed_btn = document.getElementById("share_seed")
         if (document.value.is_L_of_the_day()) {
@@ -861,7 +892,7 @@ class UI {
         let tweet_btn = document.getElementById("tweet_btn")
         tweet_btn.setAttribute('onclick', `window.open("${get_twitter_link()}", '_blank').focus()`)
 
-        set_visibility("win_overlay", true)
+        setTimeout(() => { set_visibility("win_overlay", true) }, 100)
     }
 
     init_form(parent) {
