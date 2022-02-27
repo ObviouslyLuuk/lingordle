@@ -172,7 +172,10 @@
 .subscript {
   font-size: small;
   color: #aaaaaa;
-  padding-left: 10px;
+  padding-left: 20px;
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+  border-bottom: solid #aaaaaa 1px;
 }
 
 #btns_container {

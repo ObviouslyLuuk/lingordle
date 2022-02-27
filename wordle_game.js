@@ -65,6 +65,20 @@ for (keycode = 65; keycode <= 90; keycode++) {
     keydict[keycode] = alphabet[keycode-65]
 }
 
+const QUESTION_MARK = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+</svg>`
+const BACKSPACE_0 = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-backspace-fill" viewBox="0 0 16 16">
+    <path d="M15.683 3a2 2 0 0 0-2-2h-7.08a2 2 0 0 0-1.519.698L.241 7.35a1 1 0 0 0 0 1.302l4.843 5.65A2 2 0 0 0 6.603 15h7.08a2 2 0 0 0 2-2V3zM5.829 5.854a.5.5 0 1 1 .707-.708l2.147 2.147 2.146-2.147a.5.5 0 1 1 .707.708L9.39 8l2.146 2.146a.5.5 0 0 1-.707.708L8.683 8.707l-2.147 2.147a.5.5 0 0 1-.707-.708L7.976 8 5.829 5.854z"/>
+</svg>`
+const BACKSPACE_1 = `
+<svg xmlns="http://www.w3.org/2000/svg" height="21" viewBox="0 0 24 24" width="24">
+    <path fill="currentColor" d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"></path>
+</svg>`
+
 var WORDS_BY_LANG = {}
 
 // Maths
@@ -575,10 +589,12 @@ class UI {
         create_and_append("span", close_settings_btn, null, "glyphicon glyphicon-remove")        
         close_settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", false)')
 
+        let subscript
+
         let hard_mode_checkbox = create_switch(parent, " hard mode", "hard_mode_checkbox")
         hard_mode_checkbox.setAttribute('onclick', 'document.value.reset(null, null, null, this.checked)')
-        let subscript = create_and_append("div", parent, null, "subscript")
-        subscript.innerHTML = 'Revealed letters must be used in subsequent guesses.'
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'Revealed letters must be used in subsequent guesses'
 
         let select = create_and_append("select", parent, "language_select")
         let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek", "polish"]
@@ -600,6 +616,8 @@ class UI {
                     set_visibility("settings_overlay", false);
                 }
             }, 10); // check every 10ms`)
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'Switch to another language'            
 
         let incrementer = create_incrementer(parent, "word_len", 5, "Word Length")
         document.getElementById("word_len_input").addEventListener("change", () => {
@@ -622,10 +640,14 @@ class UI {
             } else {
             game.reset(word_len, null, null) }
         })
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'Change word length'        
 
         let word_otd_btn = create_and_append('div', parent, 'word_otd_btn', 'btn')
         word_otd_btn.innerHTML = "Lingordle of the Day"
         word_otd_btn.setAttribute('onclick', 'document.value.reset(null, null, null, null, get_date_string())')
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'Switch back to the Lingordle of the Day'        
     }
 
     init_help(parent) {
@@ -711,6 +733,7 @@ class UI {
             width="${width}" height="${height}" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`
         parent.innerHTML = form_HTML
 
+        // No access to the iframe content apparently
         // let div_to_remove = document.getElementById('form_frame').contentWindow.document.getElementsByClassName("freebirdFormviewerViewFooterEmbeddedBackground")[0]
         // div_to_remove.parentElement.removeChild(div_to_remove)
 
@@ -748,11 +771,7 @@ class UI {
         settings_btn.setAttribute('onclick', 'set_visibility("settings_overlay", true)')
 
         let help_btn = create_and_append('div', screen_mid_right, 'help_btn', 'butn')
-        help_btn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-            <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-        </svg>`
+        help_btn.innerHTML = QUESTION_MARK
         help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
 
         return { settings_div, help_overlay, win_overlay, form_overlay }
@@ -882,11 +901,7 @@ class UI {
                 if (!["enter", "backspace"].includes(key)) {
                     alphabet.push(btn.innerHTML)
                 } else if (key == "backspace") {
-                    btn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-backspace-fill" viewBox="0 0 16 16">
-                        <path d="M15.683 3a2 2 0 0 0-2-2h-7.08a2 2 0 0 0-1.519.698L.241 7.35a1 1 0 0 0 0 1.302l4.843 5.65A2 2 0 0 0 6.603 15h7.08a2 2 0 0 0 2-2V3zM5.829 5.854a.5.5 0 1 1 .707-.708l2.147 2.147 2.146-2.147a.5.5 0 1 1 .707.708L9.39 8l2.146 2.146a.5.5 0 0 1-.707.708L8.683 8.707l-2.147 2.147a.5.5 0 0 1-.707-.708L7.976 8 5.829 5.854z"/>
-                    </svg>
-                    `
+                    btn.innerHTML = BACKSPACE_1
                 }
             }
         }
