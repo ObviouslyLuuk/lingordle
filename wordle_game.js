@@ -999,7 +999,10 @@ class UI {
         let tweet_btn = document.getElementById("tweet_btn")
         tweet_btn.setAttribute('onclick', `window.open("${get_twitter_link()}", '_blank').focus()`)
 
-        setTimeout(() => { set_visibility("win_overlay", true) }, 100)
+        setTimeout(() => { 
+            // set_visibility("win_overlay", true)
+            unfade(document.getElementById("win_overlay"))
+        }, 100)
     }
 
     init_form(parent) {
