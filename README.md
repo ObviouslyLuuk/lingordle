@@ -4,7 +4,7 @@ Unlimited Lingo/Wordle
 - different languages (more coming)
 - includes cheats (being updated atm)
 
-[Play Here](ObviouslyLuuk.github.io/Lingordle/)
+[Play Here](https://ObviouslyLuuk.github.io/Lingordle/)
 
 <!-- ![screenshot](https://github.com/ObviouslyLuuk/Lingordle/screenshot_cropped.png?raw=true) -->
 ![screenshot](screenshot_cropped.png)
