@@ -774,8 +774,13 @@ class UI {
 
     init_help(parent) {
         let close_help_btn = create_and_append('div', parent, 'close_help_btn', 'butn close_btn')
-        create_and_append("span", close_help_btn, null, "glyphicon glyphicon-remove")        
+        create_and_append("span", close_help_btn, null, "glyphicon glyphicon-remove")
         close_help_btn.setAttribute('onclick', 'set_visibility("help_overlay", false)')
+
+        parent = create_and_append("div", parent, "help_div")
+        parent.style.height = `${document.body.offsetHeight*.85}px`
+        parent.style["padding-right"] = "10px"
+        parent.setAttribute('data-simplebar', "init")
 
         let cell_width = 50
         let word, board, row
