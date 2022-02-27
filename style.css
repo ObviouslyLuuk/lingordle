@@ -180,8 +180,24 @@
   width: 100%;
 }
 
-#win_title {
+.title {
   text-align: center;
+}
+
+.guess_bar_div {
+  display: flex;
+  padding: 2px;
+}
+
+.guess_bar_num {
+  padding: 2px;
+  margin-right: 3px;
+}
+
+.guess_bar {
+  background-color: var(--absent_color);
+  padding: 2px;
+  border-radius: 2px;
 }
 
 .subscript {

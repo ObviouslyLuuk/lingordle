@@ -135,6 +135,11 @@ function sum_array(array) {
     return sum
 }
 
+function mean(array) {
+    if (array.length == 0) {return 0}
+    return sum_array(array) / array.length
+}
+
 function sigmoid_elementwise(array, constant=0) {
     new_array = []
     for (let x of array) {
@@ -305,7 +310,7 @@ function get_share_string(use_dict=emoji_dict_code) {
     let last_row = results[results.length-1]
     if (last_row.includes("present") || last_row.includes("absent")) {attempts = "X"}
 
-    let text = `${language[0].toUpperCase()+language.slice(1)} Lingordle ${LotD} ${attempts}/${total_attempts}\n`
+    let text = `${language.toTitleCase()} Lingordle ${LotD} ${attempts}/${total_attempts}\n`
     for (let row of results) {
         text += "\n"
         for (let result of row) {
@@ -351,6 +356,29 @@ function unfade(element, display="grid") {
         op += op * 0.1;
     }, 10);
 }
+
+function isAlpha(c){
+    // https://stackoverflow.com/questions/40120915/javascript-function-that-returns-true-if-a-letter
+    return /^[A-Z]$/i.test(c);
+  }
+
+function toTitleCase(text) {
+    if (text.length == 1) {text = [text]}
+
+    let new_text = ""
+    let prev_char = ""
+    for (let c of text) {
+        if (isAlpha(prev_char)) {new_text += c}
+        else                    {new_text += c.toUpperCase()}
+        prev_char = c
+    }
+    return new_text
+}
+
+Object.defineProperty( String.prototype, 'toTitleCase', {
+	value: function (param) {
+        return toTitleCase(this.toString())}
+})
 
 // Data manipulation
 function order_words_by_value(word_values) {
@@ -405,6 +433,22 @@ function copy_to_clipboard(text) {
 class Game {
     constructor(word_len=5, attempts=6, language="wordle", hard_mode=false, seed=null) {
         document.value = this
+
+        this.language
+        this.word_len
+        this.attempts
+        this.hard_mode
+        this.seed
+
+        this.filtered_word_probs
+        this.allowed_guesses
+        this.mystery_words
+        this.mystery_word
+
+        this.win_list
+        this.guess_distribution
+
+        this.init_stats(attempts)
 
         this.ui = new UI(word_len, attempts)
         this.ui.resize(this.ui)
@@ -494,11 +538,18 @@ class Game {
     }
 
     win_fn() {
+        this.win_list.push(true)
+        let guesses = this.get_results().length
+        if (!this.guess_distribution[guesses]) {this.guess_distribution[guesses] = 0}
+        this.guess_distribution[guesses] ++
+
         this.ui.update_win_screen(true)
         this.ui.current_cell = null
     }
     
     lose_fn() {
+        this.win_list.push(false)
+
         this.ui.update_win_screen(false)
         this.ui.current_cell = null
     }
@@ -579,6 +630,24 @@ class Game {
         return this.mystery_words
     }
 
+    init_stats(attempts) {
+        // https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Client-side_storage
+        try {
+            this.win_list = JSON.parse(localStorage.getItem("Lingordle_win_list"))
+        } catch(e) {}
+        if (!this.win_list) {
+            this.win_list = [] }
+        
+        try {
+            this.guess_distribution = JSON.parse(localStorage.getItem("Lingordle_guess_distribution"))
+        } catch(e) {}
+        if (!this.guess_distribution) {
+            this.guess_distribution = {}
+            for (let i = 1; i <= attempts; i++) {
+                this.guess_distribution[i] = 0 } 
+        }
+    }
+
     is_LotD() {
         return this.seed == get_date_string()
     }
@@ -622,7 +691,7 @@ class Game {
         )          
 
         this.ui.reset(word_len, this.attempts, this.language)
-        this.ui.display_message(`total allowed words: ${Object.keys(this.allowed_guesses).length}, total mystery words: ${Object.keys(this.mystery_words).length}`, 5000)
+        this.ui.display_message(`${this.language.toTitleCase()}<br>total allowed words: ${Object.keys(this.allowed_guesses).length}<br>total mystery words: ${Object.keys(this.mystery_words).length}`, 5000)
 
         document.getElementById("word_len_input").value = this.word_len
         document.getElementById(this.language+"_option").selected = true
@@ -724,7 +793,7 @@ class UI {
         languages.push("wordle")
         for (let lang of languages) {
             let option = create_and_append("option", select, lang+"_option")
-            option.innerHTML = lang[0].toUpperCase() + lang.slice(1)
+            option.innerHTML = lang.toTitleCase()
             option.value = lang
             option.selected = true
         }
@@ -855,8 +924,17 @@ class UI {
         create_and_append("span", close_btn, null, "glyphicon glyphicon-remove")        
         close_btn.setAttribute('onclick', 'set_visibility("win_overlay", false)')
 
-        let title = create_and_append('h1', parent, "win_title", null)
+        let title = create_and_append('h1', parent, "win_title", "title")
         title.innerHTML = ""
+
+        let game = document.value
+        let win_rate = create_and_append("div", parent, "win_rate")
+        win_rate.innerHTML = `Wins: ${(mean(game.win_list)*100).toFixed(0)}%`
+
+        let guess_distribution = game.guess_distribution
+        let guess_bars_title = create_and_append("h2", parent, null, "title")
+        guess_bars_title.innerHTML = "Guess Distribution"
+        this.init_guess_bars(parent, guess_distribution)
 
         let tweet_btn = create_and_append('button', parent, "tweet_btn", "btn btn-primary")
         tweet_btn.innerHTML = "Tweet "+TWITTER_ICON
@@ -874,19 +952,45 @@ class UI {
         play_again_btn.setAttribute("onclick", 'document.value.reset(); set_visibility("win_overlay", false)')
     }
 
+    init_guess_bars(parent, guess_distribution) {
+        let guess_bars = document.getElementById("guess_bars")
+        if (!guess_bars) {
+            guess_bars = create_and_append("div", parent, "guess_bars")
+        } else {
+            empty_element(guess_bars)
+        }
+        let max_count = Math.max(Math.max(...Object.values(guess_distribution)), 1)
+        for (let [num, count] of Object.entries(guess_distribution)) {
+            let guess_bar_div = create_and_append("div", guess_bars, null, "guess_bar_div")
+            let num_div = create_and_append("div", guess_bar_div, null, "guess_bar_num")
+            num_div.innerHTML = `${num} `
+            let guess_bar = create_and_append("div", guess_bar_div, null, "guess_bar")
+            guess_bar.style.width = `${15 + count/max_count * document.body.offsetWidth*.7}px`
+            guess_bar.innerHTML = count
+        }
+        return guess_bars
+    }
+
     update_win_screen(won) {
         let message
+        let game = document.value
         if (won) {
             message = "You Won!"
         } else {
-            message = `Too bad :(<br>the word was '${document.value.mystery_word.toUpperCase()}'`
+            message = `Too bad :(<br>the word was '${game.mystery_word.toUpperCase()}'`
         }
         let title = document.getElementById("win_title")
         title.innerHTML = message
         // this.display_message(message, 10000)
 
+        document.getElementById("win_rate").innerHTML = `Wins: ${(mean(game.win_list)*100).toFixed(0)}%`
+        this.init_guess_bars(title.parentElement, game.guess_distribution)
+        
+        localStorage.setItem("Lingordle_win_list", JSON.stringify(game.win_list))
+        localStorage.setItem("Lingordle_guess_distribution", JSON.stringify(game.guess_distribution))
+
         let share_seed_btn = document.getElementById("share_seed")
-        if (document.value.is_LotD()) {
+        if (game.is_LotD()) {
             share_seed_btn.style.display = "none"
         } else {
             share_seed_btn.style.display = "block"
@@ -1149,7 +1253,7 @@ class UI {
     }
 
     display_message(message, time=2000) {
-        console.log(message)
+        console.log(message.replaceAll("<br>", "\n"))
         let div = document.getElementById('message')
         div.innerHTML = message
         setTimeout(() => { div.style['display'] = 'block' }, 100) // Delay to make sure it's not immediately set to none
