@@ -291,19 +291,26 @@ function get_share_string(use_dict=emoji_dict_code) {
     if (results.length < 1) {return null}
 
     let language = game.language
+    let LotD = ""
+    let seed_text = `\nseed: ${game.seed}`
+    if (game.is_L_of_the_day()) {
+        LotD = "of the Day"
+        seed_text = ""
+    }
     let attempts = results.length
     let total_attempts = game.attempts
 
     let last_row = results[results.length-1]
     if (last_row.includes("present") || last_row.includes("absent")) {attempts = "X"}
 
-    let text = `${language[0].toUpperCase()+language.slice(1)} Lingordle ${attempts}/${total_attempts}\n`
+    let text = `${language[0].toUpperCase()+language.slice(1)} Lingordle ${LotD} ${attempts}/${total_attempts}\n`
     for (let row of results) {
         text += "\n"
         for (let result of row) {
             text += use_dict[result]
         }
     }
+    text += seed_text
     return text
 }
 
