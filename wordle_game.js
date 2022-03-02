@@ -19,6 +19,7 @@ const HTML_DICT = {
 
 const latin_alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 const greek_alphabet = ['\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', '\u03D1', '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD', '\u03BE', '\u03BF', '\u03C0', '\u03D6', '\u03C1', '\u03C2', '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7', '\u03C8', '\u03C9']
+const greek_chars_dict = {"\u03b1": "a", "\u03b2": "b", "\u03b3": "g", "\u03b4": "d", "\u03b5": "e", "\u03b6": "z", "\u03b7": "h", "\u03b8": "u", "\u03b9": "i", "\u03ba": "k", "\u03bb": "l", "\u03bc": "m", "\u03bd": "n", "\u03be": "j", "\u03bf": "o", "\u03c0": "p", "\u03c1": "r", "\u03c3": "s", "\u03c2": "q", "\u03c4": "t", "\u03c5": "y", "\u03c6": "f", "\u03c7": "x", "\u03c8": "c", "\u03c9": "v", "a": "\u03b1", "b": "\u03b2", "g": "\u03b3", "d": "\u03b4", "e": "\u03b5", "z": "\u03b6", "h": "\u03b7", "u": "\u03b8", "i": "\u03b9", "k": "\u03ba", "l": "\u03bb", "m": "\u03bc", "n": "\u03bd", "j": "\u03be", "o": "\u03bf", "p": "\u03c0", "r": "\u03c1", "s": "\u03c3", "q": "\u03c2", "t": "\u03c4", "y": "\u03c5", "f": "\u03c6", "x": "\u03c7", "c": "\u03c8", "v": "\u03c9"}
 
 var alphabet = latin_alphabet
 
@@ -78,11 +79,16 @@ for (let [k, v] of Object.entries(accent_dict)) {
 
 var keydict = {
     13: "enter",
-    8: "backspace",
-}
-for (keycode = 65; keycode <= 90; keycode++) {
+    8: "backspace",}
+for (let keycode = 65; keycode <= 90; keycode++) {
     keydict[keycode] = alphabet[keycode-65]
 }
+
+var keydict_greek = {}
+for (let [keycode, char] of Object.entries(keydict)) {
+    keydict_greek[keycode] = greek_chars_dict[char] }
+keydict_greek[13] = "enter"
+keydict_greek[8] = "backspace"
 
 const QUESTION_MARK = `
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
@@ -723,7 +729,7 @@ class UI {
         this.init_overlays()
 
         window.addEventListener('resize', this.resize)
-        window.addEventListener("keydown", (event) => {document.value.ui.key_down(keydict[event.keyCode])})
+        window.addEventListener("keydown", (event) => {document.value.ui.key_down(event.keyCode)})
     }
 
     reset(word_len, attempts, lang) {
@@ -764,13 +770,18 @@ class UI {
             keyboard.style.width = `${keyboard_width}px` }
     }
 
-    key_down(key) {
+    key_down(keycode) {
+        let game = document.value
+        let key = keydict[keycode]
+        if (game.language == "greek") {
+            key = keydict_greek[keycode] }
+
         if (alphabet.includes(key)) {
             this.enter_letter(key)
         } else if (key == "backspace") {
             this.remove_letter()
         } else if (key == "enter") {
-            document.value.step()
+            game.step()
         }
     }
 
