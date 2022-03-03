@@ -764,6 +764,10 @@ class UI {
             screen_mid.style.width = `100%`
         }
 
+        let game = document.value
+        if (game.ui) {
+            game.ui.resize_board(document.getElementById("board")) }
+
         let keyboard = document.getElementById("keyboard")
         if (keyboard) {
             let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
@@ -1125,7 +1129,7 @@ class UI {
         let board = create_and_append('div', parent, id=id, "board")
         board.style["grid-gap"] = `${grid_gap}px`
         let inter_column_gaps = (word_len-1)*grid_gap
-        let inter_row_gaps = (attempts-1)*grid_gap        
+        let inter_row_gaps = (attempts-1)*grid_gap
 
         if (height) {
             board.style['height'] = `${height}px`
@@ -1152,6 +1156,37 @@ class UI {
         board.style['grid-template-rows'] = `repeat(${attempts}, minmax(0, 1fr))`
 
         return board
+    }
+
+    resize_board(board) {
+        let game = document.value
+        let word_len = game.word_len
+        let attempts = game.attempts
+
+        let grid_gap = Math.min(document.body.offsetHeight, document.body.offsetWidth) / 100
+        board.style["grid-gap"] = `${grid_gap}px`
+        let inter_column_gaps = (word_len-1)*grid_gap
+        let inter_row_gaps = (attempts-1)*grid_gap
+
+        let title_div = document.getElementById("page_title_div")
+        let keyboard = document.getElementById("keyboard")
+        let allowed_height = document.body.offsetHeight - title_div.offsetHeight - keyboard.offsetHeight
+        let mid_right = document.getElementById("game_screen_mid_right")
+        let mid_left = document.getElementById("game_screen_mid_left")
+        let allowed_width = document.body.offsetWidth - mid_left.offsetWidth - mid_right.offsetWidth
+
+        let allowed_wideness = allowed_width/allowed_height
+        let wideness = word_len/attempts
+
+        if (wideness > allowed_wideness) {
+            let width = allowed_width *.85
+            board.style['width'] = `${width}px`
+            board.style['height'] = `${(width-inter_column_gaps)/word_len*attempts+inter_row_gaps}px`
+        } else {
+            let height = allowed_height *.85
+            board.style['height'] = `${height}px`
+            board.style['width'] = `${(height-inter_row_gaps)/attempts*word_len+inter_column_gaps}px`
+        }
     }
 
     set_cell_state(cell, state, change_keys) {
