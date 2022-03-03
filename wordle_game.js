@@ -729,7 +729,7 @@ class UI {
         this.init_overlays()
 
         window.addEventListener('resize', this.resize)
-        window.addEventListener("keydown", (event) => {document.value.ui.key_down(event.keyCode)})
+        window.addEventListener("keydown", (event) => {document.value.ui.keycode_down(event.keyCode)})
     }
 
     reset(word_len, attempts, lang) {
@@ -770,18 +770,21 @@ class UI {
             keyboard.style.width = `${keyboard_width}px` }
     }
 
-    key_down(keycode) {
+    keycode_down(keycode) {
         let game = document.value
         let key = keydict[keycode]
         if (game.language == "greek") {
             key = keydict_greek[keycode] }
+        game.ui.key_down(key)
+    }
 
+    key_down(key) {
         if (alphabet.includes(key)) {
             this.enter_letter(key)
         } else if (key == "backspace") {
             this.remove_letter()
         } else if (key == "enter") {
-            game.step()
+            document.value.step()
         }
     }
 
