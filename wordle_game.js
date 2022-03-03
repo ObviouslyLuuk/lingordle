@@ -1273,8 +1273,17 @@ class UI {
         console.log(message.replaceAll("<br>", "\n"))
         let div = document.getElementById('message')
         div.innerHTML = message
+
+        let messageid = div.getAttribute("data-messageid")
+        if (!messageid) {
+            messageid = 0 }
+        messageid++
+        div.setAttribute("data-messageid", messageid)
+
         setTimeout(() => { div.style['display'] = 'block' }, 100) // Delay to make sure it's not immediately set to none
-        // setTimeout(() => { div.style['display'] = 'none' }, time)
+        setTimeout(() => { 
+            if (div.getAttribute("data-messageid") != messageid) {return}
+            div.style['display'] = 'none' }, time)
         // setTimeout(() => { div.innerHTML = '&nbsp' }, time)
     }
 
