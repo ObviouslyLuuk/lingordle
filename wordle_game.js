@@ -979,7 +979,9 @@ class UI {
             let num_div = create_and_append("div", guess_bar_div, null, "guess_bar_num")
             num_div.innerHTML = `${num} `
             let guess_bar = create_and_append("div", guess_bar_div, null, "guess_bar")
-            guess_bar.style.width = `${15 + count/max_count * document.body.offsetWidth*.7}px`
+            guess_bar.style["min-width"] = `15px`
+            let percentage = count/max_count * 100
+            guess_bar.style.width = `${percentage}%`
             guess_bar.innerHTML = count
         }
         return guess_bars
