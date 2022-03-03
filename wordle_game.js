@@ -1143,6 +1143,7 @@ class UI {
                 cell.innerHTML = "&nbsp"
 
                 cell.setAttribute('data-state', 'none')
+                cell.setAttribute("onanimationend", 'this.setAttribute("data-animation", "none")')
                 // cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
             }
         }
@@ -1238,6 +1239,7 @@ class UI {
     enter_letter(letter) {
         let cell = this.current_cell
         cell.innerHTML = letter
+        cell.setAttribute("data-animation", "pop")
         if (cell.nextElementSibling != null)
             this.current_cell = cell.nextElementSibling
     }

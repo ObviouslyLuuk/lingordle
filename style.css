@@ -127,6 +127,13 @@
     border: 2px solid gray;
 }
 
+.board_cell[data-animation="pop"] {
+  animation-name: pop;
+  animation-duration: 100ms;
+  /* animation-timing-function: ease-in; */
+  animation-iteration-count: 1;
+}
+
 *[data-state="correct"] {
   background-color: var(--correct_color);
   border-color: var(--correct_color);
@@ -338,8 +345,13 @@ body {
 }
 
 
-/* @keyframes pop {
+@keyframes pop {
   from {
-
+    transform: scale(.8);
+    opacity: 0;
   }
-} */
+  40% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
