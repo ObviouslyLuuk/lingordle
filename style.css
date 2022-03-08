@@ -127,7 +127,7 @@
     border: 2px solid gray;
 }
 
-.board_cell[data-animation="pop"] {
+*[data-animation="pop"] {
   animation-name: pop;
   animation-duration: 100ms;
   /* animation-timing-function: ease-in; */
@@ -135,16 +135,25 @@
 }
 
 *[data-state="correct"] {
-  background-color: var(--correct_color);
-  border-color: var(--correct_color);
+  animation: flip_correct 500ms;
+  animation-fill-mode: forwards;
+  animation-timing-function: linear;
+  /* background-color: var(--correct_color);
+  border-color: var(--correct_color); */
 }
 *[data-state="present"] {
-  background-color: var(--present_color);
-  border-color: var(--present_color);
+  animation: flip_present 500ms;
+  animation-fill-mode: forwards;
+  animation-timing-function: linear;
+  /* background-color: var(--present_color);
+  border-color: var(--present_color); */
 }
 *[data-state="absent"] {
-  background-color: var(--absent_color);
-  border-color: var(--absent_color);
+  animation: flip_absent 500ms;
+  animation-fill-mode: forwards;
+  animation-timing-function: linear;
+  /* background-color: var(--absent_color);
+  border-color: var(--absent_color); */
 }
 
 .word_list {
@@ -170,7 +179,8 @@
 .overlay {
   position: absolute;
   display: none;
-  width: 90%;
+  width: 50%;
+  min-width: 300px;
   margin: 20px;
   background-color: rgba(0, 0, 0, 0.9);
   padding: 20px;
@@ -353,5 +363,61 @@ body {
   40% {
     transform: scale(1.1);
     opacity: 1;
+  }
+}
+
+
+@keyframes flip_correct {
+  from {
+    transform: rotateX(0);
+  }
+  50% {
+    transform: rotateX(-90deg);
+    background-color: unset;
+    border-color: unset;
+  } 51% {
+    background-color: var(--correct_color);
+    border-color: var(--correct_color);
+  }
+  to {
+    transform: rotateX(0);
+    background-color: var(--correct_color);
+    border-color: var(--correct_color);
+  }
+}
+@keyframes flip_present {
+  from {
+    transform: rotateX(0);
+  }
+  50% {
+    transform: rotateX(-90deg);
+    background-color: unset;
+    border-color: unset;
+  } 51% {
+    background-color: var(--present_color);
+    border-color: var(--present_color);
+  }
+  to {
+    transform: rotateX(0);
+    background-color: var(--present_color);
+    border-color: var(--present_color);
+  }
+}
+@keyframes flip_absent {
+  from {
+    transform: rotateX(0);
+  }
+  50% {
+    transform: rotateX(-90deg);
+    background-color: unset;
+    border-color: unset;
+  } 51% {
+    background-color: var(--absent_color);
+    border-color: var(--absent_color);
+  }
+  to {
+    transform: rotateX(0);
+    background-color: var(--absent_color);
+    border-color: var(--absent_color);
   }
 }

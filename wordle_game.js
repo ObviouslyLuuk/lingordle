@@ -112,6 +112,10 @@ const COPY_ICON = `
   <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
   <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
 </svg>`
+const BARCHART_ICON = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bar-chart-line-fill" viewBox="0 0 16 16">
+  <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2z"/>
+</svg>`
 
 var WORDS_BY_LANG = {}
 
@@ -707,6 +711,8 @@ class Game {
         else {
             document.getElementById("page_header").innerHTML = "LINGORDLE" }
 
+        this.ui.update_win_screen()
+
         let new_url = get_share_link((seed != null))
         window.history.pushState(null, document.title, new_url.pathname+new_url.search)
 
@@ -991,13 +997,15 @@ class UI {
         return guess_bars
     }
 
-    update_win_screen(won) {
+    update_win_screen(won=null) {
         let message
         let game = document.value
         if (won) {
             message = "You Won!"
-        } else {
+        } else if (won == false) {
             message = `Too bad :(<br>the word was '${game.mystery_word.toUpperCase()}'`
+        } else if (won == null) {
+            message = ''
         }
         let title = document.getElementById("win_title")
         title.innerHTML = message
@@ -1019,10 +1027,12 @@ class UI {
         let tweet_btn = document.getElementById("tweet_btn")
         tweet_btn.setAttribute('onclick', `window.open("${get_twitter_link()}", '_blank').focus()`)
 
-        setTimeout(() => { 
-            // set_visibility("win_overlay", true)
-            unfade(document.getElementById("win_overlay"))
-        }, 100)
+        if (won != null) {
+            setTimeout(() => { 
+                // set_visibility("win_overlay", true)
+                unfade(document.getElementById("win_overlay"))
+            }, 100)
+        }
     }
 
     init_form(parent) {
@@ -1053,17 +1063,23 @@ class UI {
         this.init_form(form_overlay)
 
         let overlays = {
-            "help_overlay": {div: help_overlay, btn_id: "help_btn"},
-            "win_overlay": {div: win_overlay, btn_id: "game_screen_mid_bott"},
-            "form_overlay": {div: form_overlay, btn_id: "message"},
-            "settings_overlay": {div: settings_overlay, btn_id: "settings_btn"},
-            "message": {div: document.getElementById("message"), btn_id: "message"}
+            "help_overlay": {div: help_overlay, btn_ids: ["help_btn"]},
+            "win_overlay": {div: win_overlay, btn_ids: ["game_screen_mid_bott", "stats_btn"]},
+            "form_overlay": {div: form_overlay, btn_ids: ["message"]},
+            "settings_overlay": {div: settings_overlay, btn_ids: ["settings_btn"]},
+            "message": {div: document.getElementById("message"), btn_ids: ["message"]}
         }
 
         // Close overlay when clicking elsewhere
-        for (let [id, {div, btn_id}] of Object.entries(overlays)) {
+        for (let [id, {div, btn_ids}] of Object.entries(overlays)) {
             window.addEventListener('click', (e) => {
-                if (e.path.includes(div) || e.path.includes(document.getElementById(btn_id))) {return}
+                let includes_btn = false
+                for (let btn_id of btn_ids) {
+                    if (e.path.includes(document.getElementById(btn_id))) {
+                        includes_btn = true; break }
+                }
+
+                if (e.path.includes(div) || includes_btn) {return}
                 set_visibility(id, false)
             })
         }
@@ -1094,6 +1110,10 @@ class UI {
         let reset_btn = create_and_append('div', screen_mid_left, 'reset_btn', 'butn')
         create_and_append("span", reset_btn, null, "glyphicon glyphicon-repeat")        
         reset_btn.setAttribute('onclick', 'document.value.reset()')
+
+        let stats_btn = create_and_append('div', screen_mid_left, 'stats_btn', 'butn')
+        stats_btn.innerHTML = BARCHART_ICON
+        stats_btn.setAttribute('onclick', 'set_visibility("win_overlay", true)')      
 
         let settings_btn = create_and_append('div', screen_mid_right, 'settings_btn', 'butn')
         create_and_append("span", settings_btn, null, "glyphicon glyphicon-cog")
@@ -1149,7 +1169,7 @@ class UI {
                 cell.innerHTML = "&nbsp"
 
                 cell.setAttribute('data-state', 'none')
-                cell.setAttribute("onanimationend", 'this.setAttribute("data-animation", "none")')
+                cell.setAttribute("onanimationend", 'this.setAttribute("data-animation", "none"); this.setAttribute("data-animation_back", "none")')
                 // cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
             }
         }

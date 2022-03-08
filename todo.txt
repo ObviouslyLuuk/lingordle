@@ -1,7 +1,5 @@
-let height/width of grid depend on the actual room there is for it
 add word inclusion threshold for easier games
 add mode where words from different languages can be picked
 
-add sharing function like the original
 have separate files with different length words?
 use tree structure or hashing to check word validity?
