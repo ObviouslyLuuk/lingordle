@@ -1031,7 +1031,7 @@ class UI {
             setTimeout(() => { 
                 // set_visibility("win_overlay", true)
                 unfade(document.getElementById("win_overlay"))
-            }, 100)
+            }, 1000)
         }
     }
 
@@ -1169,7 +1169,7 @@ class UI {
                 cell.innerHTML = "&nbsp"
 
                 cell.setAttribute('data-state', 'none')
-                cell.setAttribute("onanimationend", 'this.setAttribute("data-animation", "none"); this.setAttribute("data-animation_back", "none")')
+                cell.setAttribute("onanimationend", 'this.setAttribute("data-animation", "none")')
                 // cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
             }
         }
