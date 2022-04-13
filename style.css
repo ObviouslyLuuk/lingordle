@@ -49,6 +49,7 @@
     padding-top: 20px;
     padding-bottom: 20px;
     background-color: gray;
+    border: solid gray;
     border-radius: 5px;
     margin: 2px;
     text-transform: uppercase;
@@ -59,14 +60,15 @@
 
 #enter-key {
   background-color: var(--correct_color);
+  border-color: var(--correct_color);
   height: 70%;
   -webkit-text-stroke: thin;
   display: grid;
   align-content: center;  
 }
 
-.keep_lower {
-  text-transform: lowercase !important;
+.extra_char {
+  border-color: white;
 }
 
 #game_screen {

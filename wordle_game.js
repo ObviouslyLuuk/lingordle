@@ -52,60 +52,6 @@ const BARCHART_ICON = `
 
 var alphabet = latin_alphabet
 
-var accent_dict = {
-    '\xe0': 'a',
-    '\xe1': 'a',
-    '\xe2': 'a',
-    '\xe4': 'a',
-    '\xe5': 'a',
-    '\xe3': 'a',
-    '\xe7': 'c',
-    '\xe8': 'e',
-    '\xe9': 'e',
-    '\xea': 'e',
-    '\xeb': 'e',
-    '\xec': 'i',
-    '\xed': 'i',
-    '\xee': 'i',
-    '\xef': 'i',
-    '\xf1': 'n',
-    '\u0144': 'n',
-    '\xf2': 'o',
-    '\xf3': 'o',
-    '\xf4': 'o',
-    '\xf6': 'o',
-    '\xf9': 'u',
-    '\xfa': 'u',
-    '\xfb': 'u',
-    '\xfc': 'u',
-    '\u015b': 's',
-    '\u0105': 'a',
-    '\u0107': 'c',
-    '\u0119': 'e',
-    '\u017a': 'z',
-    '\u017c': 'z',
-    '\u03ae': '\u03b7',
-    '\u0389': '\u0397',
-    '\u038e': '\u03a5',
-    '\u038a': '\u0399',
-    '\u03cb': '\u03c5',
-    '\u03b0': '\u03c5',
-    '\u03cd': '\u03c5',
-    '\u0388': '\u0395',
-    '\u038c': '\u039f',
-    '\u03ad': '\u03b5',
-    '\u03cc': '\u03bf',
-    '\u03ca': '\u03b9',
-    '\u03af': '\u03b9',
-    '\u0390': '\u03b9',
-    '\u03ac': '\u03b1',
-    '\u03ce': '\u03c9',
-    '\u03c2': '\u03c3',
-}
-// for (let [k, v] of Object.entries(accent_dict)) {
-//     accent_dict[k.toUpperCase()] = v.toUpperCase()
-// }
-
 var keydict = {
     13: "enter",
     8: "backspace",}
@@ -429,8 +375,10 @@ function apply_sigmoid(word_probs) {
     return word_probs
 }
 
-function remove_accents(word) {
-    new_word = ''
+function remove_accents(word, lang=document.value.language) {
+    let accent_dict = LANG_DICT[lang].accent_dict
+
+    let new_word = ''
     for (let i in word) {
         c = word[i]
         // c = c.toLowerCase()
@@ -1222,6 +1170,7 @@ class UI {
         if (!lang) {
             lang = document.value.language
         }
+        if (lang == "wordle" || !lang) {lang = "english"}
 
         let old_keyboard = document.getElementById('keyboard')
         if (old_keyboard)
@@ -1229,29 +1178,14 @@ class UI {
 
         alphabet = []
 
-        let keep_lower = ["&#223"]
-
         let middle_row = 1
-        let rows = [
-                   "q,w,e,r,t,y,u,i,o,p", 
-                    "a,s,d,f,g,h,j,k,l", 
-                "z,x,c,v,b,n,m,backspace",
-                "enter",]
-        if (lang == "greek") {
-            rows = [
-            "&#949,&#961,&#964,&#965,&#952,&#953,&#959,&#960", // removed &#962
-            "&#945,&#963,&#948,&#966,&#947,&#951,&#958,&#954,&#955",
-            "&#950,&#967,&#968,&#969,&#946,&#957,&#956,backspace",
-            "enter",]
-        } else if (lang == "dutch") {
-            rows[middle_row] += ",&#307"
-        } else if (lang == "french") {
-            rows[middle_row] += ",&#230,&#339"
-        } else if (lang == "german") {
-            rows[middle_row] += ",&#223"
-        } else if (lang == "polish") {
-            rows[middle_row] += ",&#322"
-        }
+        let rows = []
+        for (let row of LANG_DICT[lang]["keyboard"]) {
+            rows.push([...row]) }
+        rows[rows.length-1].push("backspace")
+        rows.push(["enter"])
+        let extra_chars = LANG_DICT[lang].extra_chars
+        if (!extra_chars) {extra_chars = []}
         let keyboard = create_and_append('div', parent, "keyboard")
         
         for (let i in rows) {
@@ -1259,11 +1193,10 @@ class UI {
             let row = create_and_append('div', keyboard, null, "keyboard_row")
             if (i == middle_row)
                 row.style.width = "90%"
-            for (let key of keys.split(",")) {
+            for (let key of keys) {
                 let add_class = ''
-                if (keep_lower.includes(key)) {
-                    add_class = 'keep_lower'
-                }
+                if (extra_chars.includes(key)) {
+                    add_class = "extra_char" }
 
                 let btn = create_and_append('div', row, null, "keyboard_btn "+add_class)
                 btn.innerHTML = key
@@ -1398,7 +1331,7 @@ if (urlParams.has("seed")) {
 let id = load_word_probs(language, word_len)
 let key = `${language},${word_len}`
 let checkExist = setInterval(function() {
-    if (WORD_PROBS[key] && ALLOWED_WORDS[key]) {
+    if (WORD_PROBS[key] && ALLOWED_WORDS[key] && LANG_DICT) {
         console.log("Words loaded!");
         clearInterval(checkExist);
         new Game(word_len, attempts, language, false, seed)
