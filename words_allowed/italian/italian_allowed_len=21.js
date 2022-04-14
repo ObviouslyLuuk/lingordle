@@ -1,0 +1,1 @@
+ALLOWED_WORDS["italian,21"] = ["desossicorticosterone", "intellettualizzazione", "interconfessionalismo", "otorinolaringoiatrica", "otorinolaringoiatrico", "seicentocinquantamila", "sottoproletarizzarono", "teleradiotrasmettendo"]

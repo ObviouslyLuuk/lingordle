@@ -1,0 +1,1 @@
+ALLOWED_WORDS["indonesian,3"] = ["Ehe", "Esa", "Hut", "Ida", "Isa", "Leo", "Mei", "Roh", "San", "Sao", "Zen", "cuh", "dup", "jir", "oja", "uan", "ucu", "uek", "uih", "uik", "zib", "zus"]

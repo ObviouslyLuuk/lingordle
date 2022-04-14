@@ -1,0 +1,1 @@
+ALLOWED_WORDS["hebrew,2"] = ["\u05d8\u05e2"]

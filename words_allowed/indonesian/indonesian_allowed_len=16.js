@@ -1,0 +1,1 @@
+ALLOWED_WORDS["indonesian,16"] = ["antisiklogenesis", "ekstralinguistis", "elektrokoagulasi", "fundamentalistis", "hipertradisional", "hipervitaminosis", "interaksionistik", "interkonsonantal", "intrauniversiter", "kalimatusyahadat", "makrokriminologi", "makrometeorologi", "neoimpresionisme", "tangkuptelentang", "tribokelistrikan", "tungganglanggang"]

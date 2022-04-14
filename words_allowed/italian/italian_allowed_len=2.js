@@ -1,0 +1,1 @@
+ALLOWED_WORDS["italian,2"] = ["AN", "CD", "Co", "EU", "El", "Es", "IP", "Lu", "MS", "PC", "PD", "PN", "Po", "Ra", "TG", "TV", "UE", "Vs", "V\u00f2", "c\u00e0", "d\u00e0", "d\u00ec", "d\u00f2", "hm", "l\u00e0", "l\u00ec", "n\u00e9", "p\u00f2", "ql", "s\u00e8", "s\u00e9", "s\u00ec", "t\u00e8", "t\u00e9", "t\u00f2", "v\u00e0", "v\u00e9"]

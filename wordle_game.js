@@ -377,6 +377,7 @@ function apply_sigmoid(word_probs) {
 
 function remove_accents(word, lang=document.value.language) {
     let accent_dict = LANG_DICT[lang].accent_dict
+    if (!accent_dict) {accent_dict = {}}
 
     let new_word = ''
     for (let i in word) {
@@ -689,7 +690,8 @@ class UI {
         this.init_overlays()
 
         window.addEventListener('resize', this.resize)
-        window.addEventListener("keydown", (event) => {document.value.ui.keycode_down(event.keyCode)})
+        window.addEventListener("keydown", (event) => {if (event.key == "Backspace"){document.value.ui.keycode_down(event.key)}})
+        window.addEventListener("keypress", (event) => {document.value.ui.keycode_down(event.key)})
     }
 
     reset(word_len, attempts, lang) {
@@ -736,9 +738,7 @@ class UI {
 
     keycode_down(keycode) {
         let game = document.value
-        let key = keydict[keycode]
-        if (game.language == "greek") {
-            key = keydict_greek[keycode] }
+        let key = keycode.toLowerCase()
         game.ui.key_down(key)
     }
 
@@ -749,6 +749,8 @@ class UI {
             this.remove_letter()
         } else if (key == "enter") {
             document.value.step()
+        } else {
+            console.log(`Key ${key} is not in this language's alphabet`)
         }
     }
 
@@ -766,7 +768,7 @@ class UI {
         subscript.innerHTML = 'Revealed letters must be used in subsequent guesses'
 
         let select = create_and_append("select", parent, "language_select")
-        let languages = ["english", "dutch", "spanish", "french", "italian", "german", "greek", "polish"]
+        let languages = Object.keys(LANG_DICT)
         languages.sort()
         languages.push("wordle")
         for (let lang of languages) {
@@ -942,7 +944,7 @@ class UI {
         if (won) {
             message = "You Won!"
         } else if (won == false) {
-            message = `Too bad :(<br>the word was '${game.mystery_word.toUpperCase()}'`
+            message = `Too bad :(<br>the word was '${game.mystery_word}'`
         } else if (won == null) {
             message = ''
         }
@@ -1178,10 +1180,10 @@ class UI {
 
         alphabet = []
 
-        let middle_row = 1
         let rows = []
         for (let row of LANG_DICT[lang]["keyboard"]) {
             rows.push([...row]) }
+        let middle_row = (rows.length-1)-1 // We'll call second to last: middle
         rows[rows.length-1].push("backspace")
         rows.push(["enter"])
         let extra_chars = LANG_DICT[lang].extra_chars

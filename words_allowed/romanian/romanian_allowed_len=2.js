@@ -1,0 +1,1 @@
+ALLOWED_WORDS["romanian,2"] = ["AT", "Bd", "CD", "CV", "Cu", "DC", "DN", "El", "FC", "FM", "GB", "GM", "GO", "GX", "HD", "HP", "Hz", "ID", "IP", "IT", "Io", "Ip", "Jo", "La", "Li", "MB", "ME", "MO", "NT", "Oz", "PC", "PD", "PN", "PS", "RC", "SB", "SC", "SF", "Sf", "St", "TB", "TV", "Tg", "UE", "US", "VM", "XP", "XX", "eV", "h\u0103"]

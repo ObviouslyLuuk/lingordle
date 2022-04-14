@@ -1,0 +1,1 @@
+ALLOWED_WORDS["turkish,2"] = ["ET", "GB", "HA", "Hu", "LP", "MB", "MK", "MS", "M\u00d6", "M\u00dc", "RC", "TT", "UK", "UN", "il", "im", "in", "ip", "is", "it", "iv", "iz", "i\u00e7", "i\u011f", "i\u015f", "ki", "mi", "si", "ti", "\u00f6f", "\u0131h"]

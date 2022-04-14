@@ -1,0 +1,1 @@
+ALLOWED_WORDS["bulgarian,2"] = ["\u0410\u043b", "\u0415\u043b", "\u041b\u0430", "\u041d\u044e", "\u044f\u0439"]

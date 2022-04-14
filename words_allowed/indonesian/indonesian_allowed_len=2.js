@@ -1,0 +1,1 @@
+ALLOWED_WORDS["indonesian,2"] = ["ef"]
