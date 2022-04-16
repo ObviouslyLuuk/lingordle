@@ -272,22 +272,24 @@ function HTMLify_text(text) {
 function get_share_string(use_dict=emoji_dict_code) {
     let game = document.value
     let results = game.get_results()
-    if (results.length < 1) {return null}
 
     let language = game.language
     let LotD = ""
     let seed_text = `\nseed: ${game.seed}`
     if (game.is_LotD()) {
-        LotD = "of the Day"
+        LotD = " of the Day"
         seed_text = ""
     }
+
+    if (results.length < 1) {return `I'm playing ${language.toTitleCase()} Lingordle${LotD} :D${seed_text}`}
+
     let attempts = results.length
     let total_attempts = game.attempts
 
     let last_row = results[results.length-1]
     if (last_row.includes("present") || last_row.includes("absent")) {attempts = "X"}
 
-    let text = `${language.toTitleCase()} Lingordle ${LotD} ${attempts}/${total_attempts}\n`
+    let text = `${language.toTitleCase()} Lingordle${LotD} ${attempts}/${total_attempts}\n`
     for (let row of results) {
         text += "\n"
         for (let result of row) {
@@ -300,7 +302,6 @@ function get_share_string(use_dict=emoji_dict_code) {
 
 function get_twitter_link() {
     let text = get_share_string(emoji_dict)
-    if (!text) {return null}
     let link = TWITTER_SHARE_LINK + HTMLify_text(text)
     return link
 }
@@ -763,7 +764,7 @@ class UI {
         if (keyboard) {
             let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
             keyboard.style.width = `${keyboard_width}px`
-            keyboard.style.height = `${300}px` }
+            keyboard.style.height = `${250}px` }
 
         let game = document.value
         if (game.ui) {
@@ -927,13 +928,17 @@ class UI {
         title.innerHTML = ""
 
         let game = document.value
-        let win_rate = create_and_append("div", parent, "win_rate")
-        win_rate.innerHTML = `Wins: ${(mean(game.win_list)*100).toFixed(0)}%`
 
         let guess_distribution = game.guess_distribution
         let guess_bars_title = create_and_append("h2", parent, null, "title")
         guess_bars_title.innerHTML = "Guess Distribution"
         this.init_guess_bars(parent, guess_distribution)
+
+        let win_rate = create_and_append("div", parent, "win_rate")
+        let win_rate_value = create_and_append("h2", win_rate, "win_rate_value")
+        let win_rate_title = create_and_append("div", win_rate)
+        win_rate_value.innerHTML = `${(mean(game.win_list)*100).toFixed(0)}%`
+        win_rate_title.innerHTML = "wins"
 
         let tweet_btn = create_and_append('button', parent, "tweet_btn", "btn btn-primary")
         tweet_btn.innerHTML = "Tweet "+TWITTER_ICON
@@ -986,7 +991,7 @@ class UI {
         title.innerHTML = message
         // this.display_message(message, 10000)
 
-        document.getElementById("win_rate").innerHTML = `Wins: ${(mean(game.win_list)*100).toFixed(0)}%`
+        document.getElementById("win_rate_value").innerHTML = `${(mean(game.win_list)*100).toFixed(0)}%`
         this.init_guess_bars(title.parentElement, game.guess_distribution)
         
         localStorage.setItem("Lingordle_win_list", JSON.stringify(game.win_list))
