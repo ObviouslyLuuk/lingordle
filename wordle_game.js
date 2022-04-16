@@ -1,70 +1,4 @@
-// CONSTANTS
-const emoji_dict_code = {
-    "correct": "\uD83D\uDFE9",
-    "present": "\uD83D\uDFE8",
-    "absent": "\u2b1b",
-}
-const emoji_dict = {
-    "correct": "🟩",
-    "present": "🟨",
-    "absent": "⬛",
-}
-
-const TWITTER_SHARE_LINK = `https://twitter.com/intent/tweet?text=`
-
-const HTML_DICT = {
-    " ": "%20",
-    "\n": "%0A",
-}
-
-const latin_alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-const greek_alphabet = ['\u03B1', '\u03B2', '\u03B3', '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', '\u03D1', '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD', '\u03BE', '\u03BF', '\u03C0', '\u03D6', '\u03C1', '\u03C2', '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7', '\u03C8', '\u03C9']
-const greek_chars_dict = {"\u03b1": "a", "\u03b2": "b", "\u03b3": "g", "\u03b4": "d", "\u03b5": "e", "\u03b6": "z", "\u03b7": "h", "\u03b8": "u", "\u03b9": "i", "\u03ba": "k", "\u03bb": "l", "\u03bc": "m", "\u03bd": "n", "\u03be": "j", "\u03bf": "o", "\u03c0": "p", "\u03c1": "r", "\u03c3": "s", "\u03c2": "q", "\u03c4": "t", "\u03c5": "y", "\u03c6": "f", "\u03c7": "x", "\u03c8": "c", "\u03c9": "v", "a": "\u03b1", "b": "\u03b2", "g": "\u03b3", "d": "\u03b4", "e": "\u03b5", "z": "\u03b6", "h": "\u03b7", "u": "\u03b8", "i": "\u03b9", "k": "\u03ba", "l": "\u03bb", "m": "\u03bc", "n": "\u03bd", "j": "\u03be", "o": "\u03bf", "p": "\u03c0", "r": "\u03c1", "s": "\u03c3", "q": "\u03c2", "t": "\u03c4", "y": "\u03c5", "f": "\u03c6", "x": "\u03c7", "c": "\u03c8", "v": "\u03c9"}
-
-
-const QUESTION_MARK = `
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
-    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-</svg>`
-const BACKSPACE_0 = `
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-backspace-fill" viewBox="0 0 16 16">
-    <path d="M15.683 3a2 2 0 0 0-2-2h-7.08a2 2 0 0 0-1.519.698L.241 7.35a1 1 0 0 0 0 1.302l4.843 5.65A2 2 0 0 0 6.603 15h7.08a2 2 0 0 0 2-2V3zM5.829 5.854a.5.5 0 1 1 .707-.708l2.147 2.147 2.146-2.147a.5.5 0 1 1 .707.708L9.39 8l2.146 2.146a.5.5 0 0 1-.707.708L8.683 8.707l-2.147 2.147a.5.5 0 0 1-.707-.708L7.976 8 5.829 5.854z"/>
-</svg>`
-const BACKSPACE_1 = `
-<svg xmlns="http://www.w3.org/2000/svg" height="21" viewBox="0 0 24 24" width="24">
-    <path fill="currentColor" d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"></path>
-</svg>`
-const TWITTER_ICON = `
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter" viewBox="0 0 16 16">
-  <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/>
-</svg>`
-const COPY_ICON = `
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
-  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-</svg>`
-const BARCHART_ICON = `
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bar-chart-line-fill" viewBox="0 0 16 16">
-  <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2z"/>
-</svg>`
-///////////////////////////////
-
-var alphabet = latin_alphabet
-
-var keydict = {
-    13: "enter",
-    8: "backspace",}
-for (let keycode = 65; keycode <= 90; keycode++) {
-    keydict[keycode] = alphabet[keycode-65]
-}
-
-var keydict_greek = {}
-for (let [keycode, char] of Object.entries(keydict)) {
-    keydict_greek[keycode] = greek_chars_dict[char] }
-keydict_greek[13] = "enter"
-keydict_greek[8] = "backspace"
-
+var ALPHABET = []
 var WORD_PROBS = {}
 var ALLOWED_WORDS = {}
 
@@ -97,19 +31,6 @@ function sum_array(array) {
 function mean(array) {
     if (array.length == 0) {return 0}
     return sum_array(array) / array.length
-}
-
-function sigmoid_elementwise(array, constant=0) {
-    new_array = []
-    for (let x of array) {
-        x = x - constant
-        new_array.push( sigmoid(x) )
-    }
-    return new_array    
-}
-
-function sigmoid(x) {
-    return 1 / (1 + Math.pow(Math.E, -x))
 }
 
 // HTML
@@ -178,21 +99,6 @@ function load_word_probs(language, length) {
 function move_element(element, new_parent) {
     element.parentElement.removeChild(element)
     new_parent.appendChild(element)
-}
-
-function respondToVisibility(element, callback) {
-    // https://stackoverflow.com/questions/1462138/event-listener-for-when-element-becomes-visible
-    var options = {
-        root: document.documentElement,
-    };
-  
-    var observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            callback(entry.intersectionRatio > 0);
-        });
-    }, options);
-  
-    observer.observe(element);
 }
 
 function create_switch(parent, label_text, id) {
@@ -306,35 +212,6 @@ function get_twitter_link() {
     return link
 }
 
-function fade(element) {
-    // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
-    var op = 1;  // initial opacity
-    var timer = setInterval(function () {
-        if (op <= 0.1){
-            clearInterval(timer);
-            element.style.display = 'none';
-        }
-        element.style.opacity = op;
-        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
-        op -= op * 0.1;
-    }, 50);
-}
-
-function unfade(element, display="grid") {
-    // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
-    var op = 0.1;  // initial opacity
-    element.style.opacity = op;
-    element.style.display = display;
-    var timer = setInterval(function () {
-        if (op >= 1){
-            clearInterval(timer);
-        }
-        element.style.opacity = op;
-        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
-        op += op * 0.1;
-    }, 10);
-}
-
 function isAlpha(c){
     // https://stackoverflow.com/questions/40120915/javascript-function-that-returns-true-if-a-letter
     return /^[A-Z]$/i.test(c);
@@ -376,26 +253,12 @@ function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
 }
 
-function normalize_word_probs(word_probs) {
-    let sum = sum_array(Object.values(word_probs))
-    for (let key of Object.keys(word_probs)) {
-        word_probs[key] /= sum
+function normalize_dict_values(dict) {
+    let sum = sum_array(Object.values(dict))
+    for (let key of Object.keys(dict)) {
+        dict[key] /= sum
     }
-    return word_probs
-}
-
-function apply_sigmoid(word_probs) {
-    for (let [key, prob] of Object.entries(word_probs)) {
-        word_probs[key] = Math.log(prob) } // take log to mitigate Zipf's law
-
-    let max = Math.max(...Object.values(word_probs))
-    let min = Math.min(...Object.values(word_probs))
-    let range = max - min + 1e-8
-    for (let [key, prob] of Object.entries(word_probs)) {
-        fixed_range_prob = (prob - min)/range * 20 - 10 // Make between -10 and 10
-        word_probs[key] = sigmoid( fixed_range_prob )
-    }
-    return word_probs
+    return dict
 }
 
 function remove_accents(word, lang=document.value.language) {
@@ -593,19 +456,10 @@ class Game {
         if (!result.includes("present") && !result.includes("absent")) {
             this.win_fn()
             return true
-        } else if (last_attempt)
-            this.lose_fn()
+        } else if (last_attempt) {
+            this.lose_fn() }
         
         return false
-    }
-
-    filter_by_len(word_len, word_probs) {
-        let filtered_word_probs = {}
-        for (let [word, count] of Object.entries(word_probs)) {
-            if (word.length == word_len)
-                filtered_word_probs[word] = count
-        }
-        return normalize_word_probs(filtered_word_probs)
     }
 
     init_stats(attempts) {
@@ -725,7 +579,7 @@ class UI {
 
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {if (event.key == "Backspace"){document.value.ui.keycode_down(event.key)}})
-        window.addEventListener("keypress", (event) => {document.value.ui.keycode_down(event.key)})
+        window.addEventListener("keypress", (event) => {if (event.key != " "){document.value.ui.keycode_down(event.key)}})
     }
 
     reset(word_len, attempts, lang) {
@@ -778,7 +632,7 @@ class UI {
     }
 
     key_down(key) {
-        if (alphabet.includes(key)) {
+        if (ALPHABET.includes(key)) {
             this.enter_letter(key)
         } else if (key == "backspace") {
             this.remove_letter()
@@ -1010,7 +864,10 @@ class UI {
         if (won != null) {
             setTimeout(() => { 
                 // set_visibility("win_overlay", true)
-                unfade(document.getElementById("win_overlay"))
+                // unfade(document.getElementById("win_overlay"))
+                let win_overlay = document.getElementById("win_overlay")
+                win_overlay.setAttribute("data-animation", "fade_in")
+                win_overlay.style.display = "grid"
             }, 1000)
         }
     }
@@ -1195,7 +1052,7 @@ class UI {
 
     set_cell_state(cell, state, change_keys) {
         cell.setAttribute('data-state', state)
-        if (change_keys && !this.inference && alphabet.includes(cell.innerHTML)) {
+        if (change_keys && !this.inference && ALPHABET.includes(cell.innerHTML)) {
             let key = document.getElementById(`${cell.innerHTML}-key`)
             if      (key.getAttribute("data-state") != "correct" &&
                    !(key.getAttribute("data-state") == "present" && state == "absent"))
@@ -1221,7 +1078,7 @@ class UI {
         if (old_keyboard)
             old_keyboard.parentElement.removeChild(old_keyboard)
 
-        alphabet = []
+        ALPHABET = []
 
         let rows = []
         for (let row of LANG_DICT[lang]["keyboard"]) {
@@ -1250,7 +1107,7 @@ class UI {
                 btn.setAttribute('data-state', 'none')
 
                 if (!["enter", "backspace"].includes(key)) {
-                    alphabet.push(btn.innerHTML)
+                    ALPHABET.push(btn.innerHTML)
                 } else if (key == "backspace") {
                     btn.innerHTML = BACKSPACE_1
                 }
@@ -1278,7 +1135,7 @@ class UI {
 
         let is_last_cell = (cell.nextElementSibling == null)
 
-        if (is_last_cell && alphabet.includes(cell.innerHTML)) {
+        if (is_last_cell && ALPHABET.includes(cell.innerHTML)) {
             cell.innerHTML = "&nbsp"
             this.set_cell_state(cell, "none")
             return
@@ -1316,7 +1173,7 @@ class UI {
     }
 
     word_finished(row) {
-        return alphabet.includes(row.lastChild.innerHTML)
+        return ALPHABET.includes(row.lastChild.innerHTML)
     }
 
     get_input(row) {
@@ -1379,7 +1236,7 @@ if (language == "wordle" && word_len != 5) {
 let id = load_word_probs(language, word_len)
 let key = `${language},${word_len}`
 let checkExist = setInterval(function() {
-    if (WORD_PROBS[key] && ALLOWED_WORDS[key] && LANG_DICT && AVAILABLE_LENGTHS) {
+    if (WORD_PROBS[key] && ALLOWED_WORDS[key] && LANG_DICT && AVAILABLE_LENGTHS && CONSTANTS) {
         console.log("Words loaded!");
         clearInterval(checkExist);
         new Game(word_len, attempts, language, false, seed)

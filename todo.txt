@@ -1,5 +1,4 @@
 add word inclusion threshold for easier games
 add mode where words from different languages can be picked
 
-have separate files with different length words?
 use tree structure or hashing to check word validity?

@@ -138,6 +138,13 @@
   animation-iteration-count: 1;
 }
 
+*[data-animation="fade_in"] {
+  animation-name: fade_in;
+  animation-duration: 500ms;
+  animation-timing-function: ease-in;
+  animation-iteration-count: 1;
+}
+
 *[data-state="correct"] {
   animation: flip_correct 500ms;
   animation-fill-mode: forwards;
@@ -365,6 +372,14 @@ body {
   height:100%;
   width:100%;
 
+}
+
+@keyframes fade_in {
+  from {
+    opacity: 0;
+  } to {
+    opacity: 1;
+  }
 }
 
 
