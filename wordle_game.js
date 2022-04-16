@@ -784,7 +784,7 @@ class UI {
         } else if (key == "enter") {
             document.value.step()
         } else {
-            console.log(`Key ${key} is not in this language's alphabet`)
+            document.value.ui.display_message(`Key "${key}" is not in this language's alphabet<br>You could try switching your system's keyboard language`, 1000)
         }
     }
 

@@ -252,6 +252,7 @@
     padding: 10px;
     display: none;
     font-weight: bold;
+    z-index: 1;
 }
 
 label {
@@ -329,7 +330,7 @@ input, select {
   animation: spin 2s linear infinite;
   position: absolute;
   display: none;
-  z-index: 1;
+  z-index: 2;
 }
 
 @keyframes spin {
