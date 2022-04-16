@@ -145,7 +145,7 @@ function set_visibility(element_id, vis) {
 }
 
 function load_word_probs(language, length) {
-    if (!AVAILABLE_LENGTHS[language].includes(length)) {
+    if (language != "wordle" && !AVAILABLE_LENGTHS[language].includes(length)) {
         if (document.value && document.value.ui) {
             document.value.ui.display_message(`Not enough words found of length ${length} in ${language}`, 2000)
         } else {
@@ -1135,7 +1135,7 @@ class UI {
             row.style["grid-gap"] = `${grid_gap}px`   
             row.style["grid-template-columns"] = `repeat(${word_len}, minmax(0, 1fr))`
 
-            if (lang && LANG_DICT[lang].right_to_left) {
+            if (lang && lang != "wordle" && LANG_DICT[lang].right_to_left) {
                 row.style["display"] = "flex"
                 row.style["flex-direction"] = "row-reverse" }            
 
