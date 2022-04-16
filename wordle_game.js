@@ -857,14 +857,18 @@ class UI {
         }
 
         word = "magnifique"
-        board = this.build_grid(parent, null, word.length, 1, 5, null, Math.min(cell_width*word.length, document.body.offsetWidth*.7))
-        board.style.margin = "5px"
+        let gap = 5
+        let margin = 5
+        let max_row_width = Math.min(cell_width*word.length, document.body.offsetWidth*.7)
+        board = this.build_grid(parent, null, word.length, 1, gap, null, max_row_width)
+        board.style.margin = `${margin}px`
         row = board.firstChild
         for (let i in word) {
             let cell = row.children[i]
             cell.innerHTML = word[i]
         }
-        this.color_row(row, Array(word.length).fill("correct"), false) 
+        this.color_row(row, Array(word.length).fill("correct"), false)
+        parent.parentElement.style.width = `${max_row_width+2*margin+20*2}px` // 20 is the parent padding
 
         for (let text of [
             '<br>Guess the LINGORDLE in six tries.',
