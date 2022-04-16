@@ -145,6 +145,15 @@ function set_visibility(element_id, vis) {
 }
 
 function load_word_probs(language, length) {
+    if (!AVAILABLE_LENGTHS[language].includes(length)) {
+        if (document.value && document.value.ui) {
+            document.value.ui.display_message(`Not enough words found of length ${length} in ${language}`, 2000)
+        } else {
+            window.location.href = window.location.origin
+        }
+        return null
+    }
+
     set_loader()
 
     let probs_id = `${language}_word_probs_L${length}`
@@ -343,12 +352,25 @@ function toTitleCase(text) {
     return new_text
 }
 
+function print_mystery_words() {
+    console.log(Object.keys(document.value.mystery_words))
+}
+
 Object.defineProperty( String.prototype, 'toTitleCase', {
 	value: function (param) {
         return toTitleCase(this.toString())}
 })
 
 // Data manipulation
+function get_closest_num(value, list) {
+    let closest = list[0]
+    for (let v of list) {
+        if (Math.abs(value-v) < Math.abs(value-closest)) {
+            closest = v }
+    }
+    return closest
+}
+
 function order_words_by_value(word_values) {
     return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
 }
@@ -423,7 +445,7 @@ class Game {
 
         this.init_stats(attempts)
 
-        this.ui = new UI(word_len, attempts)
+        this.ui = new UI(word_len, attempts, language)
         this.ui.resize(this.ui)
 
         this.reset(word_len, language, attempts, hard_mode, seed)
@@ -608,7 +630,18 @@ class Game {
     }
 
     wait_for_reset(word_len, language) {
-        load_word_probs(language, word_len);
+        if (language == "wordle" && word_len != 5) {language = "english"}
+
+        let id = load_word_probs(language, word_len);
+        if (id == null) {
+            if (language != this.language) {
+                let new_word_len = get_closest_num(word_len, AVAILABLE_LENGTHS[language])
+                this.wait_for_reset(new_word_len, language)
+            } else {
+                document.getElementById("word_len_input").value = this.word_len
+            }
+            return
+        }
         let game = this
         let key = `${language},${word_len}`
         let checkExist = setInterval(function() {
@@ -647,8 +680,8 @@ class Game {
         if (seed != null) {
             this.seed = seed }
 
-        console.log("mystery words: ", Object.entries(this.mystery_words))
-        console.log("allowed guesses: ", this.allowed_guesses)
+        // console.log("mystery words: ", Object.entries(this.mystery_words))
+        // console.log("allowed guesses: ", this.allowed_guesses)
         this.mystery_word = multinomial_sample(
             Object.keys(this.mystery_words), 
             Object.values(this.mystery_words),
@@ -682,11 +715,11 @@ class Game {
 
 
 class UI {
-    constructor(word_len, attempts) {
+    constructor(word_len, attempts, lang) {
         this.current_cell = null
 
         this.init_game_screen()
-        this.reset(word_len, attempts)
+        this.reset(word_len, attempts, lang)
         this.init_overlays()
 
         window.addEventListener('resize', this.resize)
@@ -697,7 +730,7 @@ class UI {
     reset(word_len, attempts, lang) {
         let screen_mid_mid = document.getElementById('game_screen_mid_mid')
 
-        this.init_grid(screen_mid_mid, word_len, attempts)
+        this.init_grid(screen_mid_mid, word_len, attempts, lang)
         this.init_keyboard(document.getElementById('game_screen_mid_bott'), lang)
         this.resize()
         set_loader("none")
@@ -726,14 +759,15 @@ class UI {
             screen_mid.style.width = `100%`
         }
 
-        let game = document.value
-        if (game.ui) {
-            game.ui.resize_board(document.getElementById("board")) }
-
         let keyboard = document.getElementById("keyboard")
         if (keyboard) {
             let keyboard_width = Math.min(document.body.offsetWidth*.95, 800)
-            keyboard.style.width = `${keyboard_width}px` }
+            keyboard.style.width = `${keyboard_width}px`
+            keyboard.style.height = `${300}px` }
+
+        let game = document.value
+        if (game.ui) {
+            game.ui.resize_board(document.getElementById("board")) }
     }
 
     keycode_down(keycode) {
@@ -788,13 +822,9 @@ class UI {
             let elem = document.getElementById("word_len_input");
             let game = document.value; 
             let word_len = +elem.value;
-            if (game.word_len == word_len) {
-                return
-            }
-            let language = game.language
-            if (language == "wordle" && word_len != 5) { language = "english" }
+            if (game.word_len == word_len) { return }
 
-            game.wait_for_reset(word_len, language)
+            game.wait_for_reset(word_len, game.language)
         })
         subscript = create_and_append("div", parent, null, "subscript")
         subscript.innerHTML = 'Change word length'        
@@ -1065,7 +1095,7 @@ class UI {
         help_btn.setAttribute('onclick', 'set_visibility("help_overlay", true)')
     }
 
-    init_grid(parent, word_len, attempts) {
+    init_grid(parent, word_len, attempts, lang) {
         let old_board = document.getElementById('board')
         if (old_board)
             old_board.parentElement.removeChild(old_board)
@@ -1081,12 +1111,12 @@ class UI {
         else {
             height = reference*.5 }
 
-        let board = this.build_grid(parent, "board", word_len, attempts, grid_gap, height, width)
+        let board = this.build_grid(parent, "board", word_len, attempts, grid_gap, height, width, lang)
 
         this.set_current_row(board.firstChild)
     }
 
-    build_grid(parent, id, word_len, attempts, grid_gap, height=null, width=null) {
+    build_grid(parent, id, word_len, attempts, grid_gap, height=null, width=null, lang=null) {
         let board = create_and_append('div', parent, id=id, "board")
         board.style["grid-gap"] = `${grid_gap}px`
         let inter_column_gaps = (word_len-1)*grid_gap
@@ -1104,6 +1134,10 @@ class UI {
             let row = create_and_append('div', board, null, "board_row")
             row.style["grid-gap"] = `${grid_gap}px`   
             row.style["grid-template-columns"] = `repeat(${word_len}, minmax(0, 1fr))`
+
+            if (lang && LANG_DICT[lang].right_to_left) {
+                row.style["display"] = "flex"
+                row.style["flex-direction"] = "row-reverse" }            
 
             for (let col = 0; col < word_len; col++) {
                 let cell = create_and_append('div', row, null, "board_cell")
@@ -1317,23 +1351,26 @@ if (urlParams.has("lang")) {
 
 let word_len = 5
 if (urlParams.has("word_len")) {
-    word_len = urlParams.get("word_len")
+    word_len = parseInt(urlParams.get("word_len"))
 }
 
 let attempts = 6
 if (urlParams.has("attempts")) {
-    attempts = urlParams.get("attempts")
+    attempts = parseInt(urlParams.get("attempts"))
 }
 
 let seed = get_date_string()
 if (urlParams.has("seed")) {
-    seed = urlParams.get("seed")
+    seed = parseInt(urlParams.get("seed"))
 }
 
+if (language == "wordle" && word_len != 5) {
+    language = "english"
+}
 let id = load_word_probs(language, word_len)
 let key = `${language},${word_len}`
 let checkExist = setInterval(function() {
-    if (WORD_PROBS[key] && ALLOWED_WORDS[key] && LANG_DICT) {
+    if (WORD_PROBS[key] && ALLOWED_WORDS[key] && LANG_DICT && AVAILABLE_LENGTHS) {
         console.log("Words loaded!");
         clearInterval(checkExist);
         new Game(word_len, attempts, language, false, seed)

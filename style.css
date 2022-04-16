@@ -40,14 +40,14 @@
 .keyboard_row {
     display: grid;
     width: 100%;
-    align-items: center;
+    align-items: stretch;
 }
 
 .keyboard_btn {
     grid-row: 1;
     color: white;
-    padding-top: 20px;
-    padding-bottom: 20px;
+    /* padding-top: 20px;
+    padding-bottom: 20px; */
     background-color: gray;
     border: solid gray;
     border-radius: 5px;
@@ -56,6 +56,10 @@
     cursor: pointer;
     text-align: center;
     user-select: none;
+
+    display: grid;
+    align-items: center;
+    justify-items: center;
 }
 
 #enter-key {
