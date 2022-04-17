@@ -407,6 +407,8 @@ class Game {
     }
 
     word_allowed(guessed_word, result, word) {
+        word = remove_accents(word)
+
         for (let i in result) {
             let c = guessed_word[i]
 
@@ -427,6 +429,8 @@ class Game {
     }
 
     word_possible(guessed_word, result, word) {
+        word = remove_accents(word)
+
         let correct_or_present = []
         for (let i in result) {if (["correct","present"].includes(result[i])) {correct_or_present.push(guessed_word[i])}}
 
@@ -467,8 +471,7 @@ class Game {
     }
 
     evaluate_word(mystery_word, guessed_word) {
-        if (this.language == "greek") {
-            mystery_word = remove_accents(mystery_word) }
+        mystery_word = remove_accents(mystery_word)
 
         let result = []
         for (let i in guessed_word) {
