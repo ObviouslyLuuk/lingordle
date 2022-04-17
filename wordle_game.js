@@ -249,8 +249,8 @@ function get_closest_num(value, list) {
     return closest
 }
 
-function order_words_by_value(word_values) {
-    return Object.fromEntries(Object.entries(word_values).sort(([,v1],[,v2]) => v2-v1))
+function order_dict_by_value(dict) {
+    return Object.fromEntries(Object.entries(dict).sort(([,v1],[,v2]) => v2-v1))
 }
 
 function normalize_dict_values(dict) {
@@ -310,6 +310,7 @@ class Game {
         this.possible_answers
         this.possible_answers_last_updated = 0
 
+        this.board_hint = false
         this.keyboard_freq = false
         this.keyboard_freq_dict
 
@@ -343,6 +344,21 @@ class Game {
 
         if (this.keyboard_freq) {
             this.set_keyboard_freq(true)
+        }
+        if (this.board_hint) {
+            this.set_board_hint(true)
+        }
+    }
+
+    set_board_hint(state) {
+        this.board_hint = state
+
+        if (this.board_hint) {
+            this.update_possible_answers()
+
+            this.ui.update_board_hint(this.keyboard_freq_dict)
+        } else {
+            this.ui.update_board_hint()
         }
     }
 
@@ -444,18 +460,16 @@ class Game {
 
             switch (result[i]) {
                 case "correct":
-                    if (word[i] != c)
-                        return false
+                    if (word[i] != c)                       {return false}
                     break;
                 case "present":
-                    if (!word.includes(c))
-                        return false
+                    if (!word.includes(c) || word[i] == c)  {return false}
                     break;
                 default:
-                    if (word.includes(c) && correct_or_present.includes(c)) {
+                    if (word[i] == c)                       {return false}
+                    else if (word.includes(c) && correct_or_present.includes(c)) {
                         correct_or_present.splice(correct_or_present.indexOf(c)) }
-                    else if (word.includes(c))
-                        return false
+                    else if (word.includes(c))              {return false}
                     break;
             }
         }
@@ -666,6 +680,8 @@ class Game {
         this.possible_answers = null
         if (this.keyboard_freq) {
             this.set_keyboard_freq(true) }
+        if (this.board_hint) {
+            this.set_board_hint(true) }
 
         let new_url = get_share_link((seed != null))
         window.history.pushState(null, document.title, new_url.pathname+new_url.search)
@@ -814,6 +830,11 @@ class UI {
         keyboard_freq_cheat.setAttribute('onclick', 'document.value.set_keyboard_freq(this.checked)')
         subscript = create_and_append("div", parent, null, "subscript")
         subscript.innerHTML = 'more likely characters will be lighter on the keyboard'
+
+        let board_hints = create_switch(parent, " position frequency")
+        board_hints.setAttribute('onclick', 'document.value.set_board_hint(this.checked)')
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'for every position the most likely character will be displayed'
     }
 
     init_help(parent) {
@@ -1137,6 +1158,7 @@ class UI {
                 cell.setAttribute('data-state', 'none')
                 cell.setAttribute("onanimationend", 'this.setAttribute("data-animation", "none")')
                 // cell.setAttribute('onclick', 'document.value.ui.switch_cell_state(this)')
+                cell.setAttribute('onclick', 'let ui = document.value.ui; if (ui.current_cell.parentElement != this.parentElement) {return}; ui.set_current_cell(this, true)')
             }
         }
         board.style['grid-template-rows'] = `repeat(${attempts}, minmax(0, 1fr))`
@@ -1185,11 +1207,19 @@ class UI {
         }
     }
 
+    set_current_cell(cell, animate=false) {
+        if (animate) {cell.setAttribute("data-animation", "pop")}
+        cell.setAttribute("data-current_cell", true)
+        if (this.current_cell) {
+            this.current_cell.removeAttribute("data-current_cell") }
+        this.current_cell = cell
+    }
+
     set_current_row(new_row) {
         let current_cell = this.current_cell
         if (current_cell && current_cell.parentElement)
             current_cell.parentElement.setAttribute('class', 'board_row')
-        this.current_cell = new_row.firstChild
+        this.set_current_cell(new_row.firstChild)
         new_row.setAttribute('class', 'board_row current_row')        
     }
 
@@ -1262,8 +1292,9 @@ class UI {
         let cell = this.current_cell
         cell.innerHTML = letter
         cell.setAttribute("data-animation", "pop")
+        cell.setAttribute("data-filled", true)
         if (cell.nextElementSibling != null)
-            this.current_cell = cell.nextElementSibling
+            this.set_current_cell(cell.nextElementSibling)
     }
 
     remove_letter() {
@@ -1274,15 +1305,23 @@ class UI {
 
         let is_last_cell = (cell.nextElementSibling == null)
 
-        if (is_last_cell && ALPHABET.includes(cell.innerHTML)) {
-            cell.innerHTML = "&nbsp"
-            this.set_cell_state(cell, "none")
-            return
+        if (is_last_cell && cell.getAttribute("data-filled")) {
+            this.empty_cell(cell)
+        } else {
+            this.empty_cell(prev_cell)
+            this.set_current_cell(prev_cell)
         }
+    }
 
-        prev_cell.innerHTML = "&nbsp"
-        this.set_cell_state(prev_cell, "none")
-        this.current_cell = prev_cell
+    empty_cell(cell) {
+        let most_likely = cell.getAttribute("data-most_likely")
+        if (most_likely && document.value.board_hint) {
+            cell.innerHTML = most_likely
+        } else {
+            cell.innerHTML = "&nbsp"
+        }
+        this.set_cell_state(cell, "none")
+        cell.removeAttribute("data-filled")
     }
 
     color_row(row, result, change_keys=true) {
@@ -1312,7 +1351,12 @@ class UI {
     }
 
     word_finished(row) {
-        return ALPHABET.includes(row.lastChild.innerHTML)
+        for (let i = 0; i < row.children.length; i++) {
+            let cell = row.children[i]
+            if (!cell.getAttribute("data-filled")) {
+                return false }
+        }
+        return true
     }
 
     get_input(row) {
@@ -1336,8 +1380,6 @@ class UI {
 
         let result = []
         for (let cell of row.children) {
-            if (cell.getAttribute('data-state') == 'none')
-                this.set_cell_state(cell, 'absent')
             result.push(cell.getAttribute('data-state'))
             cell = cell.previousElementSibling
         }      
@@ -1345,37 +1387,62 @@ class UI {
     }
 
     update_keyboard_freq(key_freqs=null, word_count=null) {
-        if (key_freqs && word_count) {
-            let aggregated_key_freqs = {}
-            for (let c of ALPHABET) {
-                aggregated_key_freqs[c] = 0
-                for (let freq_dict of Object.values(key_freqs)) {
-                    aggregated_key_freqs[c] += freq_dict[c]
-                }
-            }
-            key_freqs = aggregated_key_freqs
-
-            let filtered_key_freqs = {}
-            for (let [c,freq] of Object.entries(key_freqs)) {
-                let key = document.getElementById(`${c}-key`)
-                if (key.getAttribute("data-state") == "none") {filtered_key_freqs[c] = freq}
-            }
-            key_freqs = filtered_key_freqs
-
-            let values = Object.values(key_freqs)
-            let min = Math.min(...values)
-            let inv_range = 1 / (Math.max(...values) - min)
-
-            for (let [c,freq] of Object.entries(key_freqs)) {
-                let key = document.getElementById(`${c}-key`)
-                // key.style["background-color"] = `rgba(155,140,85,${(freq-min)*inv_range*.9+.1})`
-                key.style["background-color"] = `rgba(175,175,175,${(freq-min)*inv_range*.8+.2})`
-            }
-        } else {
+        if (!key_freqs || !word_count) {
             for (let key of document.getElementsByClassName("keyboard_btn")) {
                 if (key.getAttribute("data-state") != "none" || !ALPHABET.includes(key.innerHTML.replace('-key',''))) {continue}
                 key.style["background-color"] = `rgba(128,128,128,1)`
             }
+            return
+        }
+        
+        let aggregated_key_freqs = {}
+        for (let c of ALPHABET) {
+            aggregated_key_freqs[c] = 0
+            for (let freq_dict of Object.values(key_freqs)) {
+                aggregated_key_freqs[c] += freq_dict[c]
+            }
+        }
+        key_freqs = aggregated_key_freqs
+
+        let filtered_key_freqs = {}
+        for (let [c,freq] of Object.entries(key_freqs)) {
+            let key = document.getElementById(`${c}-key`)
+            if (key.getAttribute("data-state") == "none") {filtered_key_freqs[c] = freq}
+        }
+        key_freqs = filtered_key_freqs
+
+        let values = Object.values(key_freqs)
+        let min = Math.min(...values)
+        let inv_range = 1 / (Math.max(...values) - min)
+
+        for (let [c,freq] of Object.entries(key_freqs)) {
+            let key = document.getElementById(`${c}-key`)
+            // key.style["background-color"] = `rgba(155,140,85,${(freq-min)*inv_range*.9+.1})`
+            key.style["background-color"] = `rgba(175,175,175,${(freq-min)*inv_range*.8+.2})`
+        }
+    }
+
+    update_board_hint(key_freqs=null) {
+        let row = this.current_cell.parentElement
+        if (!key_freqs) {
+            for (let i = 0; i < row.children.length; i++) {
+                let cell = row.children[i]
+                if (!cell.getAttribute("data-filled")) {
+                    cell.innerHTML = '' }
+            }
+            return
+        }
+
+        let maxes = []
+        for (let l of Object.keys(key_freqs)) {
+            key_freqs[l] = order_dict_by_value(key_freqs[l])
+            maxes.push(Object.keys(key_freqs[l])[0])
+        }
+        for (let i = 0; i < row.children.length; i++) {
+            let cell = row.children[i]
+            cell.setAttribute("data-most_likely", maxes[i])
+            if (!cell.getAttribute("data-filled")) {
+                cell.innerHTML = maxes[i] }
         }
     }
 
