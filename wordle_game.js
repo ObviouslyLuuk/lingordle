@@ -377,9 +377,10 @@ class Game {
                 let guessed_word = this.get_guess(rows[i], false)
                 if (!this.word_possible(guessed_word, result, word)) {
                     allowed = false
-                    for (let c of new Set(word)) {
+                    for (let l in word) {
+                        let c = word[l]
                         if (!ALPHABET.includes(c)) {continue}
-                        this.keyboard_freq_dict[c] -= parseInt(prob*1e6)
+                        this.keyboard_freq_dict[l][c] -= parseInt(prob*1e6)
                     }
                     break
                 }
@@ -394,12 +395,16 @@ class Game {
     count_key_freqs() {
         // possible_answers already has to be updated here
         let key_freqs = {}
-        for (let c of ALPHABET) {key_freqs[c]=0}
+        for (let l = 0; l < this.word_len; l++) {
+            key_freqs[l] = {}
+            for (let c of ALPHABET) {key_freqs[l][c]=0}
+        }
+
         for (let [word,prob] of Object.entries(this.possible_answers)) {
-            word = new Set(word)
-            for (let c of word) {
+            for (let l in word) {
+                let c = word[l]
                 if (!ALPHABET.includes(c)) {continue}
-                key_freqs[c] += parseInt(prob*1e6)
+                key_freqs[l][c] += parseInt(prob*1e6)
             }
         }
         this.keyboard_freq_dict = key_freqs
@@ -1341,6 +1346,15 @@ class UI {
 
     update_keyboard_freq(key_freqs=null, word_count=null) {
         if (key_freqs && word_count) {
+            let aggregated_key_freqs = {}
+            for (let c of ALPHABET) {
+                aggregated_key_freqs[c] = 0
+                for (let freq_dict of Object.values(key_freqs)) {
+                    aggregated_key_freqs[c] += freq_dict[c]
+                }
+            }
+            key_freqs = aggregated_key_freqs
+
             let filtered_key_freqs = {}
             for (let [c,freq] of Object.entries(key_freqs)) {
                 let key = document.getElementById(`${c}-key`)
