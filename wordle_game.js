@@ -352,7 +352,7 @@ class Game {
         if (this.keyboard_freq) {
             this.update_possible_answers()
 
-            this.ui.update_keyboard_freq(this.keyboard_freq_dict, this.possible_answers.length)
+            this.ui.update_keyboard_freq(this.keyboard_freq_dict, Object.values(this.possible_answers).length)
         } else {
             this.ui.update_keyboard_freq()
         }
@@ -360,17 +360,17 @@ class Game {
 
     update_possible_answers() {
         if (!this.possible_answers) {
-            this.possible_answers = [...Object.keys(this.mystery_words)]
+            this.possible_answers = Object.assign({}, this.mystery_words)
             this.count_key_freqs()
         }
 
-        let possible_answers = []
+        let possible_answers = {}
         let results = this.get_results()
         let rows = document.getElementById("board").children
 
         if (this.possible_answers_last_updated - results.length == 0) {return this.possible_answers}
 
-        for (let word of this.possible_answers) {
+        for (let [word,prob] of Object.entries(this.possible_answers)) {
             let allowed = true
             for (let i = this.possible_answers_last_updated; i < results.length; i++) {
                 let result = results[i]
@@ -378,12 +378,12 @@ class Game {
                 if (!this.word_possible(guessed_word, result, word)) {
                     allowed = false
                     for (let c of new Set(word)) {
-                        this.keyboard_freq_dict[c]--
+                        this.keyboard_freq_dict[c] -= parseInt(prob*1e6)
                     }
                     break
                 }
             }
-            if (allowed) {possible_answers.push(word)}
+            if (allowed) {possible_answers[word] = this.possible_answers[word]}
         }
         this.possible_answers = possible_answers
         this.possible_answers_last_updated = results.length
@@ -394,10 +394,10 @@ class Game {
         // possible_answers already has to be updated here
         let key_freqs = {}
         for (let c of ALPHABET) {key_freqs[c]=0}
-        for (let word of this.possible_answers) {
+        for (let [word,prob] of Object.entries(this.possible_answers)) {
             word = new Set(word)
             for (let c of word) {
-                key_freqs[c]++
+                key_freqs[c] += parseInt(prob*1e6)
             }
         }
         this.keyboard_freq_dict = key_freqs
@@ -425,6 +425,9 @@ class Game {
     }
 
     word_possible(guessed_word, result, word) {
+        let correct_or_present = []
+        for (let i in result) {if (["correct","present"].includes(result[i])) {correct_or_present.push(guessed_word[i])}}
+
         for (let i in result) {
             let c = guessed_word[i]
 
@@ -438,7 +441,9 @@ class Game {
                         return false
                     break;
                 default:
-                    if (word.includes(c))
+                    if (word.includes(c) && correct_or_present.includes(c)) {
+                        correct_or_present.splice(correct_or_present.indexOf(c)) }
+                    else if (word.includes(c))
                         return false
                     break;
             }
