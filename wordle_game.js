@@ -378,6 +378,7 @@ class Game {
                 if (!this.word_possible(guessed_word, result, word)) {
                     allowed = false
                     for (let c of new Set(word)) {
+                        if (!ALPHABET.includes(c)) {continue}
                         this.keyboard_freq_dict[c] -= parseInt(prob*1e6)
                     }
                     break
@@ -397,6 +398,7 @@ class Game {
         for (let [word,prob] of Object.entries(this.possible_answers)) {
             word = new Set(word)
             for (let c of word) {
+                if (!ALPHABET.includes(c)) {continue}
                 key_freqs[c] += parseInt(prob*1e6)
             }
         }
