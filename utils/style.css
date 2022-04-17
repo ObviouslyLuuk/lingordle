@@ -1,8 +1,11 @@
 /* Luuk: */
 :root {
+  --background_color: #202124;
   --correct_color: #538d4e;
   --present_color: #b59f3b;
-  --absent_color: #3a3a3c;
+  /* --absent_color: #3a3a3c; */
+  /* --absent_color: var(--background_color); */
+  --absent_color: #333333;
   --cool_blue: rgb(0, 115, 255);
 }
 
@@ -366,7 +369,7 @@ body {
   align-content:center;
   align-items:space-around;
   /* background-color:#202830; */
-  background-color:#202124;
+  background-color: var(--background_color);
   display:grid;
   justify-items:center;
   height:100%;

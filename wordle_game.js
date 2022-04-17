@@ -307,6 +307,12 @@ class Game {
         this.win_list
         this.guess_distribution
 
+        this.possible_answers
+        this.possible_answers_last_updated = 0
+
+        this.keyboard_freq = false
+        this.keyboard_freq_dict
+
         this.init_stats(attempts)
 
         this.ui = new UI(word_len, attempts, language)
@@ -334,6 +340,68 @@ class Game {
         
         if (this.hard_mode)
             this.update_allowed_guesses(guessed_word, result)
+
+        if (this.keyboard_freq) {
+            this.set_keyboard_freq(true)
+        }
+    }
+
+    set_keyboard_freq(state) {
+        this.keyboard_freq = state
+
+        if (this.keyboard_freq) {
+            this.update_possible_answers()
+
+            this.ui.update_keyboard_freq(this.keyboard_freq_dict, this.possible_answers.length)
+        } else {
+            this.ui.update_keyboard_freq()
+        }
+    }
+
+    update_possible_answers() {
+        if (!this.possible_answers) {
+            this.possible_answers = [...Object.keys(this.mystery_words)]
+            this.count_key_freqs()
+        }
+
+        let possible_answers = []
+        let results = this.get_results()
+        let rows = document.getElementById("board").children
+
+        if (this.possible_answers_last_updated - results.length == 0) {return this.possible_answers}
+
+        for (let word of this.possible_answers) {
+            let allowed = true
+            for (let i = this.possible_answers_last_updated; i < results.length; i++) {
+                let result = results[i]
+                let guessed_word = this.get_guess(rows[i], false)
+                if (!this.word_possible(guessed_word, result, word)) {
+                    allowed = false
+                    for (let c of new Set(word)) {
+                        this.keyboard_freq_dict[c]--
+                    }
+                    break
+                }
+            }
+            if (allowed) {possible_answers.push(word)}
+        }
+        this.possible_answers = possible_answers
+        this.possible_answers_last_updated = results.length
+        return this.possible_answers
+    }
+
+    count_key_freqs() {
+        // possible_answers already has to be updated here
+        let key_freqs = {}
+        for (let c of ALPHABET) {key_freqs[c]=0}
+        for (let word of this.possible_answers) {
+            word = new Set(word)
+            for (let c of word) {
+                key_freqs[c]++
+            }
+        }
+        this.keyboard_freq_dict = key_freqs
+        return key_freqs
     }
 
     word_allowed(guessed_word, result, word) {
@@ -350,6 +418,28 @@ class Game {
                         return false
                     break;
                 default:
+                    break;
+            }
+        }
+        return true
+    }
+
+    word_possible(guessed_word, result, word) {
+        for (let i in result) {
+            let c = guessed_word[i]
+
+            switch (result[i]) {
+                case "correct":
+                    if (word[i] != c)
+                        return false
+                    break;
+                case "present":
+                    if (!word.includes(c))
+                        return false
+                    break;
+                default:
+                    if (word.includes(c))
+                        return false
                     break;
             }
         }
@@ -535,6 +625,7 @@ class Game {
         if (seed != null) {
             this.seed = seed }
 
+
         // console.log("mystery words: ", Object.entries(this.mystery_words))
         // console.log("allowed guesses: ", this.allowed_guesses)
         this.mystery_word = multinomial_sample(
@@ -555,6 +646,11 @@ class Game {
             document.getElementById("page_header").innerHTML = "LINGORDLE" }
 
         this.ui.update_win_screen()
+
+        this.possible_answers_last_updated = 0
+        this.possible_answers = null
+        if (this.keyboard_freq) {
+            this.set_keyboard_freq(true) }
 
         let new_url = get_share_link((seed != null))
         window.history.pushState(null, document.title, new_url.pathname+new_url.search)
@@ -682,13 +778,27 @@ class UI {
             game.wait_for_reset(word_len, game.language)
         })
         subscript = create_and_append("div", parent, null, "subscript")
-        subscript.innerHTML = 'Change word length'        
+        subscript.innerHTML = 'Change word length'
+        
+        let hide_loan_chars = create_switch(parent, " hide loan characters", "hide_loan_chars")
+        hide_loan_chars.setAttribute('onclick', 'document.value.ui.show_loan_chars(!this.checked)')
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = "hide characters that aren't used in words native to the language"        
 
         let word_otd_btn = create_and_append('div', parent, 'word_otd_btn', 'btn')
         word_otd_btn.innerHTML = "Lingordle of the Day"
         word_otd_btn.setAttribute('onclick', 'document.value.reset(null, null, null, null, get_date_string())')
         subscript = create_and_append("div", parent, null, "subscript")
-        subscript.innerHTML = 'Switch back to the Lingordle of the Day'        
+        subscript.innerHTML = 'Switch back to the Lingordle of the Day'
+        
+        // Cheats
+        let cheats_title = create_and_append("h2", parent)
+        cheats_title.innerHTML = "Cheats"
+
+        let keyboard_freq_cheat = create_switch(parent, " character frequency")
+        keyboard_freq_cheat.setAttribute('onclick', 'document.value.set_keyboard_freq(this.checked)')
+        subscript = create_and_append("div", parent, null, "subscript")
+        subscript.innerHTML = 'more likely characters will be lighter on the keyboard'
     }
 
     init_help(parent) {
@@ -1088,6 +1198,9 @@ class UI {
         rows.push(["enter"])
         let extra_chars = LANG_DICT[lang].extra_chars
         if (!extra_chars) {extra_chars = []}
+        let loan_chars = LANG_DICT[lang].loan_chars
+        if (!loan_chars) {loan_chars = []}
+
         let keyboard = create_and_append('div', parent, "keyboard")
         
         for (let i in rows) {
@@ -1098,13 +1211,18 @@ class UI {
             for (let key of keys) {
                 let add_class = ''
                 if (extra_chars.includes(key)) {
-                    add_class = "extra_char" }
+                    add_class += " extra_char" }
+                if (loan_chars.includes(key)) {
+                    add_class += " loan_char" }
 
-                let btn = create_and_append('div', row, null, "keyboard_btn "+add_class)
+                let btn = create_and_append('div', row, null, "keyboard_btn"+add_class)
                 btn.innerHTML = key
                 btn.id = `${btn.innerHTML}-key` // Set id based on innerHTML for formatting unique chars
                 btn.setAttribute('onclick', `document.value.ui.key_down('${btn.innerHTML}')`)
                 btn.setAttribute('data-state', 'none')
+                if (LANG_DICT[lang].loan_chars && LANG_DICT[lang].loan_chars.includes(key)) {
+                    btn.setAttribute('data-state', 'absent')
+                }
 
                 if (!["enter", "backspace"].includes(key)) {
                     ALPHABET.push(btn.innerHTML)
@@ -1117,6 +1235,12 @@ class UI {
         if (width) {
             keyboard.style.width = `${width}px`
         }
+    }
+
+    show_loan_chars(state=true) {
+        let style = document.getElementById("loan_char_style")
+        if (state) {style.innerHTML = ""}
+        else       {style.innerHTML = ".loan_char {display: none}"}
     }
 
     enter_letter(letter) {
@@ -1203,6 +1327,32 @@ class UI {
             cell = cell.previousElementSibling
         }      
         return result
+    }
+
+    update_keyboard_freq(key_freqs=null, word_count=null) {
+        if (key_freqs && word_count) {
+            let filtered_key_freqs = {}
+            for (let [c,freq] of Object.entries(key_freqs)) {
+                let key = document.getElementById(`${c}-key`)
+                if (key.getAttribute("data-state") == "none") {filtered_key_freqs[c] = freq}
+            }
+            key_freqs = filtered_key_freqs
+
+            let values = Object.values(key_freqs)
+            let min = Math.min(...values)
+            let inv_range = 1 / (Math.max(...values) - min)
+
+            for (let [c,freq] of Object.entries(key_freqs)) {
+                let key = document.getElementById(`${c}-key`)
+                // key.style["background-color"] = `rgba(155,140,85,${(freq-min)*inv_range*.9+.1})`
+                key.style["background-color"] = `rgba(175,175,175,${(freq-min)*inv_range*.8+.2})`
+            }
+        } else {
+            for (let key of document.getElementsByClassName("keyboard_btn")) {
+                if (key.getAttribute("data-state") != "none" || !ALPHABET.includes(key.innerHTML.replace('-key',''))) {continue}
+                key.style["background-color"] = `rgba(128,128,128,1)`
+            }
+        }
     }
 
 }

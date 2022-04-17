@@ -338,7 +338,7 @@ const LANG_DICT = {
                 "m"
             ],
             [
-                "z",
+                "w",
                 "x",
                 "c",
                 "v",

@@ -6,5 +6,5 @@ Unlimited Lingo/Wordle
 
 [Play Here](https://ObviouslyLuuk.github.io/lingordle/)
 
-<!-- ![screenshot](https://github.com/ObviouslyLuuk/Lingordle/utils/screenshot_cropped.png?raw=true) -->
+<!-- ![screenshot](https://github.com/ObviouslyLuuk/Lingordle/main/utils/screenshot_cropped.png?raw=true) -->
 ![screenshot](screenshot_cropped.png)
