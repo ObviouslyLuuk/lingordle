@@ -278,6 +278,26 @@ function remove_accents(word, lang=document.value.language) {
     return new_word
 }
 
+function occurrences(string, subString, allowOverlapping=false) {
+    // https://stackoverflow.com/questions/4009756/how-to-count-string-occurrence-in-string
+    string += "";
+    subString += "";
+    if (subString.length <= 0) return (string.length + 1);
+
+    var n = 0,
+        pos = 0,
+        step = allowOverlapping ? 1 : subString.length;
+
+    while (true) {
+        pos = string.indexOf(subString, pos);
+        if (pos >= 0) {
+            ++n;
+            pos += step;
+        } else break;
+    }
+    return n;
+}
+
 function copy_to_clipboard(text) {
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
     navigator.clipboard.writeText(text).then(function() {
@@ -460,16 +480,15 @@ class Game {
 
             switch (result[i]) {
                 case "correct":
-                    if (word[i] != c)                       {return false}
+                    if (word[i] != c)      {return false}
                     break;
                 case "present":
-                    if (!word.includes(c) || word[i] == c)  {return false}
+                    if (!word.includes(c)) {return false}
+                    else if (word[i] == c) {return false}
                     break;
-                default:
-                    if (word[i] == c)                       {return false}
-                    else if (word.includes(c) && correct_or_present.includes(c)) {
-                        correct_or_present.splice(correct_or_present.indexOf(c)) }
-                    else if (word.includes(c))              {return false}
+                case "absent":
+                    if (word[i] == c)      {return false}
+                    else if (occurrences(word,c) > occurrences(correct_or_present,c)) {return false}
                     break;
             }
         }
