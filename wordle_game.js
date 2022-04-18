@@ -886,6 +886,7 @@ class UI {
         for (let i in word) {
             let cell = row.children[i]
             cell.innerHTML = word[i]
+            cell.setAttribute("data-filled", true)
         }
         this.color_row(row, Array(word.length).fill("correct"), false)
         parent.parentElement.style.width = `${max_row_width+2*margin+20*2}px` // 20 is the parent padding
@@ -906,6 +907,7 @@ class UI {
         for (let i in word) {
             let cell = row.children[i]
             cell.innerHTML = word[i]
+            cell.setAttribute("data-filled", true)
         }
         this.color_row(row, ["correct", "absent", "present", "absent", "absent"], false)
 
@@ -925,6 +927,7 @@ class UI {
         for (let i in word) {
             let cell = row.children[i]
             cell.innerHTML = word[i]
+            cell.setAttribute("data-filled", true)
         }
         this.color_row(row, Array(word.length).fill("correct"), false)
 
