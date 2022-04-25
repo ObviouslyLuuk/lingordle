@@ -562,7 +562,7 @@ class Game {
                     allowed = true }
             }
             if (!allowed) {
-                this.ui.display_message(guessed_word.toUpperCase()+` isn't a valid guess.`,
+                this.ui.display_message(`Sorry :( ${guessed_word.toUpperCase()} isn't in the vocabulary.`,
                 10000)
                 let msg_div = document.getElementById('message')
                 msg_div.innerHTML += ` Disagree? <a class='link' onclick='set_visibility("form_overlay", true)'>Add word</a>`
@@ -722,6 +722,7 @@ class UI {
         this.init_game_screen()
         this.reset(word_len, attempts, lang)
         this.init_overlays()
+        // this.init_wordlist()
 
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {if (event.key == "Backspace"){document.value.ui.keycode_down(event.key)}})
@@ -845,15 +846,23 @@ class UI {
         let cheats_title = create_and_append("h2", parent)
         cheats_title.innerHTML = "Cheats"
 
-        let keyboard_freq_cheat = create_switch(parent, " character frequency")
+        let keyboard_freq_cheat = create_switch(parent, " character frequency", "char_freq_cheat")
         keyboard_freq_cheat.setAttribute('onclick', 'document.value.set_keyboard_freq(this.checked)')
         subscript = create_and_append("div", parent, null, "subscript")
         subscript.innerHTML = 'more likely characters will be lighter on the keyboard'
 
-        let board_hints = create_switch(parent, " position frequency")
+        let board_hints = create_switch(parent, " position frequency", "board_hint_cheat")
         board_hints.setAttribute('onclick', 'document.value.set_board_hint(this.checked)')
         subscript = create_and_append("div", parent, null, "subscript")
-        subscript.innerHTML = 'for every position the most likely character will be displayed'
+        subscript.innerHTML = 'for every independent position the most likely character will be displayed on the board'
+    }
+
+    init_wordlist() {
+        let expand_btn = create_and_append("div", document.body, "expand_btn_left")
+        expand_btn.innerHTML = ">"
+        expand_btn.setAttribute("onclick", "document.getElementById('possible_list').setAttribute('data-animation', 'fade_in')")
+
+        let possible_list = create_and_append("div", document.body, "possible_list", "wordlist")
     }
 
     init_help(parent) {
