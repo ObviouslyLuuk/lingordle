@@ -49,6 +49,16 @@ function create_and_append(type, parent=null, id=null, class_=null) {
     return element
 }
 
+function add_data_to_table(table, data, columns) {
+    for (let row of data) {
+        let trow = create_and_append("tr", table, null)
+        for (let i of columns) {
+            td = create_and_append("td", trow)
+            td.innerHTML = row[i]
+        }
+    }  
+}
+
 function empty_element(element) {
     while(element.firstChild){
         element.removeChild(element.firstChild);
@@ -404,7 +414,9 @@ class Game {
         let results = this.get_results()
         let rows = document.getElementById("board").children
 
-        if (this.possible_answers_last_updated - results.length == 0) {return this.possible_answers}
+        if (this.possible_answers_last_updated - results.length == 0) {
+            this.ui.update_wordlist()
+            return this.possible_answers}
 
         for (let [word,prob] of Object.entries(this.possible_answers)) {
             let allowed = true
@@ -425,6 +437,7 @@ class Game {
         }
         this.possible_answers = possible_answers
         this.possible_answers_last_updated = results.length
+        this.ui.update_wordlist()
         return this.possible_answers
     }
 
@@ -722,7 +735,7 @@ class UI {
         this.init_game_screen()
         this.reset(word_len, attempts, lang)
         this.init_overlays()
-        // this.init_wordlist()
+        this.init_wordlist()
 
         window.addEventListener('resize', this.resize)
         window.addEventListener("keydown", (event) => {if (event.key == "Backspace"){document.value.ui.keycode_down(event.key)}})
@@ -856,13 +869,39 @@ class UI {
         subscript = create_and_append("div", parent, null, "subscript")
         subscript.innerHTML = 'for every independent position the most likely character will be displayed on the board'
     }
-
+    
     init_wordlist() {
-        let expand_btn = create_and_append("div", document.body, "expand_btn_left")
-        expand_btn.innerHTML = ">"
-        expand_btn.setAttribute("onclick", "document.getElementById('possible_list').setAttribute('data-animation', 'fade_in')")
+        let expand_btn = create_and_append("div", document.body, "expand_btn_left", "cheats")
+        expand_btn.innerHTML = RIGHT_ARROW_ICON
+        expand_btn.setAttribute("onclick", "document.getElementById('possible_list').setAttribute('data-animation', 'slide_from_left'); set_visibility('possible_list', true)")
 
-        let possible_list = create_and_append("div", document.body, "possible_list", "wordlist")
+        let possible_list = create_and_append("div", document.body, "possible_list", "wordlist cheats")
+        possible_list.setAttribute("data-simplebar", "init")
+        create_and_append("table", possible_list, "possible_table")
+
+        // Close wordlist when clicking anywhere
+        window.addEventListener('click', (e) => {
+            let expand_btn = document.getElementById("expand_btn_left")
+            if (e.path.includes(expand_btn)) {return}
+            document.getElementById('possible_list').setAttribute('data-animation', 'slide_to_left')
+            // set_visibility("possible_list", false)
+        })
+    }
+
+    update_wordlist() {
+        let table = document.getElementById("possible_table")
+        empty_element(table)
+        add_data_to_table(table, Object.entries(document.value.possible_answers), [0])
+    }
+
+    set_cheats_visible() {
+        let sty = document.getElementById("cheats_style")
+        let game = document.value
+        if (game.board_hint || game.keyboard_freq) {
+            sty.innerHTML = ''
+        } else {
+            sty.innerHTML = '.cheats {display: none !important}'
+        }
     }
 
     init_help(parent) {
@@ -1423,6 +1462,7 @@ class UI {
                 if (key.getAttribute("data-state") != "none" || !ALPHABET.includes(key.innerHTML.replace('-key',''))) {continue}
                 key.style["background-color"] = `rgba(128,128,128,1)`
             }
+            this.set_cheats_visible()
             return
         }
         
@@ -1451,6 +1491,7 @@ class UI {
             // key.style["background-color"] = `rgba(155,140,85,${(freq-min)*inv_range*.9+.1})`
             key.style["background-color"] = `rgba(175,175,175,${(freq-min)*inv_range*.8+.2})`
         }
+        this.set_cheats_visible()
     }
 
     update_board_hint(key_freqs=null) {
@@ -1461,6 +1502,7 @@ class UI {
                 if (!cell.getAttribute("data-filled")) {
                     cell.innerHTML = '' }
             }
+            this.set_cheats_visible()
             return
         }
 
@@ -1475,8 +1517,8 @@ class UI {
             if (!cell.getAttribute("data-filled")) {
                 cell.innerHTML = maxes[i] }
         }
+        this.set_cheats_visible()
     }
-
 }
 
 const queryString = window.location.search

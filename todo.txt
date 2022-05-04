@@ -2,3 +2,15 @@ add word inclusion threshold for easier games
 add mode where words from different languages can be picked
 
 use tree structure or hashing to check word validity?
+
+rewrite all JS to be in classes Main, Game, Controls, Display, Solver
+Main: has all interaction between classes and passing the args etc
+Game: has all the game logic
+Controls: creates the buttons and their functions, but doesn't place them
+Display: places everything
+Solver: has all the statistics and probabilities calculated from the game
+
+maybe even have Keyboard in its own subclass, and maybe Board too
+
+Make separate repos for the data/usefull stuff I've collected
+

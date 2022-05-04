@@ -159,6 +159,17 @@
   animation-timing-function: ease-in;
   animation-iteration-count: 1;
 }
+*[data-animation="slide_from_left"] {
+  animation-name: slide_from_left;
+  animation-duration: 500ms;
+  animation-iteration-count: 1;
+}
+*[data-animation="slide_to_left"] {
+  animation-name: slide_to_left;
+  animation-duration: 500ms;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
 
 *[data-state="correct"] {
   animation: flip_correct 500ms;
@@ -187,16 +198,30 @@
   position: absolute;
   left: 0;
   top: 50%;
-  height: 50px;
-  width: 10px;
-  transform: translate(0, -50%);  
+  height: 28px;
+  width: 15px;
+  border-radius: 0px 5px 5px 0px;
+  transform: translate(0, -50%);
+  display: grid;
+  justify-content: end;
+  padding-right: 2px;
+}
+#expand_btn_left:hover {
+  width: 20px;
 }
 
 .wordlist {
+  display: none;
   position: absolute;
   top: 50%;
   transform: translate(0, -50%);
-  padding: 10px;
+  padding: 17px;
+  width: 100px;
+  background-color: #30313699;
+  border-radius: 0px 5px 5px 0px;
+  max-height: 90%;
+  overflow: auto;
+  height: 70%;
 }
 
 #possible_list {
@@ -413,6 +438,21 @@ body {
     opacity: 1;
   } to {
     opacity: 0;
+  }
+}
+
+@keyframes slide_from_left {
+  from {
+    transform: translate(-100%, -50%);
+  } to {
+    transform: translate(0, -50%);
+  }
+}
+@keyframes slide_to_left {
+  from {
+    transform: translate(0, -50%);
+  } to {
+    transform: translate(-100%, -50%);
   }
 }
 
