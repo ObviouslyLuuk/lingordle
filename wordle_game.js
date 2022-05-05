@@ -272,6 +272,8 @@ function normalize_dict_values(dict) {
 }
 
 function remove_accents(word, lang=document.value.language) {
+    if (lang == "wordle") {lang = "english"}
+
     let accent_dict = LANG_DICT[lang].accent_dict
     if (!accent_dict) {accent_dict = {}}
 
@@ -635,7 +637,12 @@ class Game {
         return this.seed == get_date_string()
     }
 
-    wait_for_reset(word_len, language) {
+    wait_for_reset(word_len=null, language=null) {
+        if (language == "wordle") {word_len = 5}
+
+        if (!word_len) {word_len = this.word_len}
+        if (!language) {language = this.language}
+
         if (language == "wordle" && word_len != 5) {language = "english"}
 
         let id = load_word_probs(language, word_len);
@@ -826,8 +833,9 @@ class UI {
             option.value = lang
             option.selected = true
         }
-        select.setAttribute("onchange", `let language = this.value; let word_len = document.value.word_len;
-            document.value.wait_for_reset(word_len, language);
+        select.setAttribute("onchange", `
+            let language = this.value; 
+            document.value.wait_for_reset(null, language);
             set_visibility("settings_overlay", false);`)
         subscript = create_and_append("div", parent, null, "subscript")
         subscript.innerHTML = 'Switch to another language'            
@@ -839,7 +847,7 @@ class UI {
             let word_len = +elem.value;
             if (game.word_len == word_len) { return }
 
-            game.wait_for_reset(word_len, game.language)
+            game.wait_for_reset(word_len)
         })
         subscript = create_and_append("div", parent, null, "subscript")
         subscript.innerHTML = 'Change word length'
@@ -877,8 +885,9 @@ class UI {
             let div = document.getElementById('possible_list')
             div.setAttribute('data-animation', 'slide_from_left'); 
             set_visibility('possible_list', true)
+            set_visibility('expand_btn_left', false)
             let table = document.getElementById("possible_table")
-            let width = table.offsetWidth + 2*17 // 17px = padding
+            let width = table.offsetWidth + 2*20 // 20px = padding
             div.style.width = `${width}px`
         })
 
@@ -891,6 +900,7 @@ class UI {
             let expand_btn = document.getElementById("expand_btn_left")
             if (e.path.includes(expand_btn)) {return}
             document.getElementById('possible_list').setAttribute('data-animation', 'slide_to_left')
+            set_visibility('expand_btn_left', true)
             // set_visibility("possible_list", false)
         })
     }
@@ -898,7 +908,12 @@ class UI {
     update_wordlist() {
         let table = document.getElementById("possible_table")
         empty_element(table)
-        add_data_to_table(table, Object.entries(document.value.possible_answers), [0])
+        let possible_answers = Object.entries(document.value.possible_answers)
+        let len = possible_answers.length
+        let top = [[len]]
+        for (let i=0; i<Math.min(50, len); i++) {top.push(possible_answers[i])}
+        if (len > 50) {top.push(["..."])}
+        add_data_to_table(table, top, [0])
     }
 
     set_cheats_visible() {
