@@ -873,7 +873,14 @@ class UI {
     init_wordlist() {
         let expand_btn = create_and_append("div", document.body, "expand_btn_left", "cheats")
         expand_btn.innerHTML = RIGHT_ARROW_ICON
-        expand_btn.setAttribute("onclick", "document.getElementById('possible_list').setAttribute('data-animation', 'slide_from_left'); set_visibility('possible_list', true)")
+        expand_btn.addEventListener("click", (e) => {
+            let div = document.getElementById('possible_list')
+            div.setAttribute('data-animation', 'slide_from_left'); 
+            set_visibility('possible_list', true)
+            let table = document.getElementById("possible_table")
+            let width = table.offsetWidth + 2*17 // 17px = padding
+            div.style.width = `${width}px`
+        })
 
         let possible_list = create_and_append("div", document.body, "possible_list", "wordlist cheats")
         possible_list.setAttribute("data-simplebar", "init")
