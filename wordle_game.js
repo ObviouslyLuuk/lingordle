@@ -741,7 +741,7 @@ class UI {
 
         this.init_game_screen()
         this.reset(word_len, attempts, lang)
-        this.init_overlays()
+        this.init_overlays(lang)
         this.init_wordlist()
 
         window.addEventListener('resize', this.resize)
@@ -1110,9 +1110,9 @@ class UI {
         }
     }
 
-    init_form(parent) {
+    init_form(parent, lang="english") {
         let width=400, height=600
-        let form_HTML = `<iframe id="form_frame" src="https://docs.google.com/forms/d/e/1FAIpQLSdqORg91cAGu2u4i4KqGengJkiADum6AoS-n7K-c7xHuFZGiA/viewform?embedded=true" 
+        let form_HTML = `<iframe id="form_frame" src="https://docs.google.com/forms/d/e/1FAIpQLSdqORg91cAGu2u4i4KqGengJkiADum6AoS-n7K-c7xHuFZGiA/viewform?embedded=true&entry.380260313=${lang.toTitleCase()}" 
             width="${width}" height="${height}" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`
         parent.innerHTML = form_HTML
 
@@ -1125,7 +1125,7 @@ class UI {
         close_form_btn.setAttribute('onclick', 'set_visibility("form_overlay", false)')
     }
 
-    init_overlays() {
+    init_overlays(lang) {
         let settings_overlay = create_and_append('div', document.body, "settings_overlay", "overlay")
         let settings_div = create_and_append('div', settings_overlay, "settings_div", "game_screen_division")
         let help_overlay = create_and_append('div', document.body, "help_overlay", "overlay")
@@ -1135,7 +1135,7 @@ class UI {
         this.init_settings(settings_div)
         this.init_help(help_overlay)
         this.init_win_screen(win_overlay)
-        this.init_form(form_overlay)
+        this.init_form(form_overlay, lang)
 
         let overlays = {
             "help_overlay": {div: help_overlay, btn_ids: ["help_btn"]},
