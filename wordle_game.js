@@ -898,7 +898,7 @@ class UI {
         // Close wordlist when clicking anywhere
         window.addEventListener('click', (e) => {
             let expand_btn = document.getElementById("expand_btn_left")
-            if (e.path.includes(expand_btn)) {return}
+            if (e.composedPath().includes(expand_btn)) {return}
             document.getElementById('possible_list').setAttribute('data-animation', 'slide_to_left')
             set_visibility('expand_btn_left', true)
             // set_visibility("possible_list", false)
@@ -1150,18 +1150,18 @@ class UI {
             window.addEventListener('click', (e) => {
                 let includes_btn = false
                 for (let btn_id of btn_ids) {
-                    if (e.path.includes(document.getElementById(btn_id))) {
+                    if (e.composedPath().includes(document.getElementById(btn_id))) {
                         includes_btn = true; break }
                 }
 
-                if (e.path.includes(div) || includes_btn) {return}
+                if (e.composedPath().includes(div) || includes_btn) {return}
                 set_visibility(id, false)
             })
         }
         // Close help overlay when clicking anywhere
         window.addEventListener('click', (e) => {
             let help_btn = document.getElementById("help_btn")
-            if (e.path.includes(help_btn)) {return}
+            if (e.composedPath().includes(help_btn)) {return}
             set_visibility("help_overlay", false)
         })        
     }
